@@ -1,5 +1,5 @@
 ---
-name: tattooista-feature-building
+name: feature
 description: Use when building a new feature, page, component, or model in the Tattooista project. Enforces project-specific gates (MERN source-of-truth, no hallucinated data, multi-tenant by default) before handing off to feature development.
 metadata:
   skillType: rigid

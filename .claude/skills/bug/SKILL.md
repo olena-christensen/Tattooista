@@ -1,5 +1,5 @@
 ---
-name: tattooista-bug-fixing
+name: bug
 description: Use when fixing a bug, regression, or unexpected behavior in the Tattooista project. Enforces project-specific gates (tenant isolation, DB/env reproduction, regression tests) before handing off to systematic debugging.
 metadata:
   skillType: rigid
