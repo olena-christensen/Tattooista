@@ -38,6 +38,23 @@ Before every `git push`, mentally verify:
 4. Do file paths resolve correctly (no local-only files)?
 5. Does the hostname/URL pattern work on vercel.app?
 
+## Building a feature
+
+When building a new feature, page, component, or model:
+
+1. **Brainstorm/plan first**, then build via the `feature-dev:feature-dev` skill. Use the `tattooista-styling` skill for ALL UI/styling work. (There is intentionally no custom "feature" skill — these conventions live here in CLAUDE.md.)
+2. **Multi-tenant by default** — see Architecture below. Any new model gets a `studioId`; any tenant-scoped query resolves the current studio and filters by it, and gets a `vitest` test in `tattooista-next/tests/lib/`.
+3. **Every feature gets a doc** in `.claude/features/<slug>.md` (template: `.claude/features/_TEMPLATE.md`). Create it while building and keep it current — the feature is not done until the doc exists. A feature without a doc leaves no trail.
+
+## Fixing a bug
+
+Use the `bug` skill — it drives a documented lifecycle: working state in `.claude-local/bugs/active/<slug>/bug.md` (gitignored), then on fix it's **archived** to `.claude/bugs/archived/<slug>.md` and a row is appended to `.claude/bugs/INDEX.md` (the append-only regression-warning log). Before changing files, check INDEX.md for prior fixes in the same area. No ticket system — slugs are plain descriptive names.
+
+## Read the feature/bug doc first; cite a source
+
+- **READ THE DOC FIRST.** Before answering anything about a feature under active development, read its `.claude/features/<slug>.md` doc; for anything about a past bug, read `.claude/bugs/INDEX.md` (and the archived bug doc it points to). Read the relevant source in full too, THEN answer. Decisions, file locations, and prior context are already written down — don't re-derive or ask what the doc answers.
+- **CITE A SOURCE FOR EVERY PROJECT CLAIM, OR SAY "I DON'T KNOW."** Any statement about how this project/feature works must be backed by a specific file, line, or quote. If you can't point to one, say you don't know and go read. Never answer from conversation momentum or assumption.
+
 ---
 
 # Tech Stack
