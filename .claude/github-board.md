@@ -1,5 +1,8 @@
 # GitHub board — cheat sheet
 
+**Board:** https://github.com/users/olena-christensen/projects/1/views/1
+(owner `olena-christensen`, project number `1`)
+
 The board is **GitHub Projects** (Board view). Issues are the cards; the
 `.claude/features/` and `.claude/bugs/` docs hold the deep context. An issue
 `#42` maps to doc slug `42-<short-name>`.
@@ -17,11 +20,11 @@ Find your project number (shown in the Project URL, or):
 gh project list --owner @me
 ```
 
-Set these once per shell (replace with yours):
+Set these once per shell:
 
 ```bash
-export GH_PROJECT=1          # your project number
-export GH_OWNER=@me          # or your org/login
+export GH_PROJECT=1                  # this project's number
+export GH_OWNER=olena-christensen    # the account that owns it
 ```
 
 ## File an issue (creates the card)
