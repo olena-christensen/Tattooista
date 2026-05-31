@@ -4,7 +4,7 @@
 {IN PROGRESS | SHIPPED | committed locally / pushed / merged — be specific about git state}
 
 ## Issue
-{GitHub issue URL — the board card, e.g. https://github.com/Menolas/Tattooista/issues/42}
+{GitHub issue URL — the board card, e.g. https://github.com/olena-christensen/Tattooista/issues/42}
 
 ## Goal
 {One or two sentences: what this feature does and why it exists.}
