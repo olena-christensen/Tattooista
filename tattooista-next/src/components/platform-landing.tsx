@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/dialog"
 import { CreateStudioForm } from "@/components/forms/create-studio-form"
 import { OwnerLoginForm } from "@/components/forms/owner-login-form"
+import { Container } from "@/components/shared/container"
+import { PlatformHeader } from "@/components/shared/platform-header"
+import { PlatformFooter } from "@/components/shared/platform-footer"
 
 const features = [
   { num: "01", title: "Portfolio Gallery", desc: "Showcase your work beautifully. Filter by style — traditional, blackwork, watercolor, you name it." },
@@ -72,31 +75,11 @@ export function PlatformLanding() {
 
   return (
     <div ref={revealRef}>
-      {/* ── Header ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-5 min-[990px]:px-[70px] bg-gradient-to-b from-[#080808]/95 to-transparent">
-        <span className="font-display text-[28px] font-semibold tracking-[3px] uppercase">
-          Tattooista
-        </span>
-        <nav className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-[#c7c7c7] text-[13px] tracking-[1.5px] uppercase hover:text-foreground transition-colors">
-            Features
-          </a>
-          <a href="#pricing" className="text-[#c7c7c7] text-[13px] tracking-[1.5px] uppercase hover:text-foreground transition-colors">
-            Pricing
-          </a>
-          <button
-            type="button"
-            onClick={openLogin}
-            className="inline-flex items-center justify-center px-7 h-11 border-[1.5px] border-foreground text-[12px] font-semibold tracking-[1.5px] uppercase transition-all duration-300 hover:bg-foreground hover:text-background"
-          >
-            Sign In
-          </button>
-        </nav>
-      </header>
+      <PlatformHeader onSignIn={openLogin} />
 
       {/* ── Hero ── */}
-      <section className="relative min-h-screen flex flex-col justify-center px-4 pt-[140px] pb-[100px] min-[990px]:px-[70px] min-[990px]:pt-[160px] min-[990px]:pb-[120px] overflow-hidden">
-        <div className="max-w-[1280px] mx-auto w-full">
+      <section className="relative min-h-screen flex flex-col justify-center pt-[140px] pb-[100px] min-[990px]:pt-[160px] min-[990px]:pb-[120px] overflow-hidden">
+        <Container>
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 border border-foreground/25 text-[11px] tracking-[2px] uppercase text-[#c7c7c7] mb-10 animate-[fadeUp_0.8s_ease-out_both]">
             <span className="w-1.5 h-1.5 bg-foreground rounded-full animate-pulse" />
@@ -135,7 +118,7 @@ export function PlatformLanding() {
           <p className="text-[13px] text-muted-foreground animate-[fadeUp_0.8s_ease-out_0.55s_both]">
             Free during pilot. No credit card required.
           </p>
-        </div>
+        </Container>
 
         {/* Decorative line */}
         <div className="hidden min-[1200px]:block absolute right-[70px] top-1/2 -translate-y-1/2 w-px h-[200px] bg-gradient-to-b from-transparent via-foreground/25 to-transparent" />
@@ -143,7 +126,7 @@ export function PlatformLanding() {
 
       {/* ── Stats ── */}
       <section className="border-t border-b border-border py-12">
-        <div className="max-w-[1280px] mx-auto px-4 min-[990px]:px-[70px]">
+        <Container>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((s) => (
               <div key={s.label} className="text-center">
@@ -152,12 +135,12 @@ export function PlatformLanding() {
               </div>
             ))}
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* ── Features ── */}
       <section id="features" className="py-20 min-[990px]:py-[120px]">
-        <div className="max-w-[1280px] mx-auto px-4 min-[990px]:px-[70px]">
+        <Container>
           <div className="landing-reveal">
             <div className="relative pl-8 text-[11px] tracking-[3px] uppercase text-muted-foreground mb-4 before:content-[''] before:absolute before:left-0 before:top-1/2 before:w-5 before:h-px before:bg-muted-foreground">
               What You Get
@@ -188,12 +171,12 @@ export function PlatformLanding() {
               </div>
             ))}
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* ── Showcase ── */}
       <section className="pb-[120px]">
-        <div className="max-w-[1280px] mx-auto px-4 min-[990px]:px-[70px]">
+        <Container>
           <div className="landing-reveal grid grid-cols-1 min-[990px]:grid-cols-2 border border-border">
             {/* Image side */}
             <div className="h-[400px] min-[990px]:h-auto min-[990px]:min-h-[560px] bg-secondary flex items-center justify-center overflow-hidden">
@@ -230,12 +213,12 @@ export function PlatformLanding() {
               </button>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* ── Pricing ── */}
       <section id="pricing" className="py-20 min-[990px]:py-[120px] border-t border-border">
-        <div className="max-w-[1280px] mx-auto px-4 min-[990px]:px-[70px]">
+        <Container>
           <div className="text-center mb-[72px]">
             <div className="landing-reveal inline-flex relative pl-8 text-[11px] tracking-[3px] uppercase text-muted-foreground mb-4 before:content-[''] before:absolute before:left-0 before:top-1/2 before:w-5 before:h-px before:bg-muted-foreground">
               Pricing
@@ -302,12 +285,12 @@ export function PlatformLanding() {
               </button>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* ── CTA ── */}
       <section className="py-20 min-[990px]:py-[120px] border-t border-border text-center">
-        <div className="max-w-[1280px] mx-auto px-4 min-[990px]:px-[70px]">
+        <Container>
           <div className="landing-reveal inline-flex relative pl-8 text-[11px] tracking-[3px] uppercase text-muted-foreground mb-4 before:content-[''] before:absolute before:left-0 before:top-1/2 before:w-5 before:h-px before:bg-muted-foreground">
             Ready?
           </div>
@@ -327,23 +310,10 @@ export function PlatformLanding() {
           <p className="landing-reveal text-[13px] text-muted-foreground mt-5">
             Pilot members get 6 months free + lifetime early-adopter pricing.
           </p>
-        </div>
+        </Container>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-border py-12">
-        <div className="max-w-[1280px] mx-auto px-4 min-[990px]:px-[70px] flex justify-between items-center flex-wrap gap-4">
-          <span className="font-display text-lg font-semibold tracking-[2px] uppercase text-muted-foreground">
-            Tattooista
-          </span>
-          <div className="flex gap-6">
-            <a href="#" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-            <a href="#" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">Terms</a>
-            <a href="#" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">Contact</a>
-          </div>
-          <span className="text-[13px] text-muted-foreground">&copy; 2026 Tattooista</span>
-        </div>
-      </footer>
+      <PlatformFooter />
 
       {/* ── Auth Dialog ── */}
       <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && closeDialog()}>

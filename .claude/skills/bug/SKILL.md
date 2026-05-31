@@ -1,58 +1,110 @@
 ---
 name: bug
-description: Use when fixing a bug, regression, or unexpected behavior in the Tattooista project. Enforces project-specific gates (tenant isolation, DB/env reproduction, regression tests) before handing off to systematic debugging.
+description: Use when fixing a bug, regression, or unexpected behavior in the Tattooista project. Drives a documented bug lifecycle (create → fix → finalize → archive → INDEX) with project-specific gates (tenant isolation, local-vs-prod reproduction, image-utils, regression tests) before handing off to systematic debugging.
 metadata:
   skillType: rigid
 ---
 
 # Tattooista Bug Fixing
 
-This is a **rigid** guardrail skill. It does NOT replace the debugging method —
-it gates on Tattooista-specific gotchas, then hands off to
+A **rigid** lifecycle skill. It does NOT replace the debugging method — it gates on
+Tattooista-specific gotchas, keeps a documented trail, then hands off to
 `superpowers:systematic-debugging` for root-cause work.
 
-Create a TodoWrite item for each step and complete them in order.
+Every fixed bug leaves a trail, mirroring the feature docs:
+- **Working state** (in progress, gitignored): `.claude-local/bugs/active/{slug}/bug.md`
+- **Archived** (fixed, committed): `.claude/bugs/archived/{slug}.md`
+- **Index** (append-only regression log): `.claude/bugs/INDEX.md`
 
-## Checklist
+`{slug}` is a plain descriptive kebab-case name (no ticket system here) — e.g.
+`portfolio-leaks-across-studios`, `avatar-404-on-vercel`.
+
+Create a TodoWrite item per phase and work them in order.
+
+## Phase detection (on entry)
+
+1. Glob `.claude-local/bugs/active/*{arg-or-keyword}*/bug.md`.
+   - **Found** → read it; resume from `## Status` + task state (To Do/In Progress → FIX; all Done → FINALIZE).
+   - **Not found** → new bug → START.
+2. Output one line, then work: **Bug: {slug} — Phase: {START|FIX|FINALIZE}**.
+
+---
+
+## START — reproduce, scope, create bug.md
 
 - [ ] **1. Ask before acting.** Per CLAUDE.md: describe what you intend to do →
-      wait for approval → then act. No exceptions. Never touch external accounts
-      (Vercel, GitHub, npm, DB) — explain what the user must do instead.
+      wait for approval → then act. Never touch external accounts (Vercel, GitHub,
+      npm, DB) — explain what the user must do instead.
 
-- [ ] **2. Reproduce first.** Identify the environment: is the bug on **local**
-      or on **Vercel** (production)? Reproduce it before theorizing.
-      - If local Prisma queries fail with `P1001: Can't reach database server`,
-        the Docker DB is down → `docker start tattooista-postgres`.
+- [ ] **2. Reproduce first; identify the environment.** Is the bug on **local**
+      (Docker Postgres) or **Vercel** (Neon prod)? Reproduce before theorizing.
+      - Local Prisma `P1001: Can't reach database server` → Docker DB is down →
+        `docker start tattooista-postgres`.
       - Local Postgres is NOT prod Neon. Confirm the data assumption holds in the
         environment where the bug actually occurs.
 
-- [ ] **3. Suspect tenant isolation FIRST.** The most common bug class here is
-      multi-tenant `studioId` scoping. Ask: is data **leaking across studios**,
-      or **failing to scope to one studio**? Check (all in
-      `tattooista-next/src/lib/tenant.ts`):
-      - `getTenantContext()` — reads the `x-studio-id` header. NOTE: the current
-        `proxy.ts` does NOT set this header, so it is usually empty.
-      - `getSessionStudio()` / `requireSessionStudio()` — the real path for
-        server actions: tries the header, then falls back to the logged-in
-        user's `studioSlug` from the session. Most admin queries resolve tenant
-        here, so check this first for admin/dashboard leaks.
+- [ ] **3. Scope tasks with the user, then create bug.md.** Read
+      `.claude/bugs/TEMPLATE.md`, create `.claude-local/bugs/active/{slug}/bug.md`,
+      and fill: title, `## Status: IN PROGRESS`, `## Branch` (current), `## Environment`,
+      `## Area`, `## Bug Summary` (repro/expected/actual/affected), `## Tasks → To Do`.
+
+## FIX — one task at a time (assess → approve → implement → complete)
+
+- [ ] **4. Suspect tenant isolation FIRST.** The most common bug class here is
+      multi-tenant `studioId` scoping. Ask: is data **leaking across studios**, or
+      **failing to scope to one**? Check (all in `tattooista-next/src/lib/tenant.ts`):
+      - `getTenantContext()` — reads the `x-studio-id` header. NOTE: `proxy.ts` does
+        NOT set this header, so it is usually empty.
+      - `getSessionStudio()` / `requireSessionStudio()` — the real path for server
+        actions: header first, then the logged-in user's `studioSlug` from session.
+        Most admin/dashboard queries resolve tenant here — check this first for leaks.
       - the query itself — does it filter by `studioId`?
 
-- [ ] **4. Image rendering bug?** Before touching components, check the
-      three-format URL logic in `tattooista-next/src/lib/image-utils.ts`
-      (external URL vs relative path vs filename-only).
+- [ ] **5. Image rendering bug?** Before touching components, check the three-format
+      URL logic in `tattooista-next/src/lib/image-utils.ts` (external URL vs relative
+      path vs filename-only).
 
-- [ ] **5. Hand off to the method.** Invoke `superpowers:systematic-debugging`
-      and follow it to find the root cause. Do not patch symptoms.
+- [ ] **6. Hand off to the method.** Invoke `superpowers:systematic-debugging` and
+      follow it to the root cause. Do not patch symptoms.
 
-- [ ] **6. Regression test.** If the bug lives in `lib/` (tenant, slug, studio,
+- [ ] **7. Record as you go.** Append patterns to `## Discovered` and per-task notes
+      to `## Actual Fix Notes` per `discovery-rules.md`. Move tasks To Do → In Progress
+      → Done. Append changed paths to `## Files Modified`. Do NOT commit (CLAUDE.md).
+
+## FINALIZE — test, archive, index
+
+- [ ] **8. Regression test.** If the bug lives in `lib/` (tenant, slug, studio,
       placeholder, etc.), add or extend a `vitest` test in
       `tattooista-next/tests/lib/` so it cannot regress. Run
-      `cd tattooista-next && npm test`.
+      `cd tattooista-next && npm test` and record the result in `## Regression Test`.
 
-- [ ] **7. Think before pushing.** Before any `git push`, verify:
+- [ ] **9. Write the takeaway** (one sentence, per `discovery-rules.md`) into the
+      bug.md `## Takeaway`. Then **archive**: move
+      `.claude-local/bugs/active/{slug}/bug.md` → `.claude/bugs/archived/{slug}.md`
+      and remove the now-empty active dir.
+
+- [ ] **10. Append to INDEX.** Insert a row at the top of the table in
+      `.claude/bugs/INDEX.md`:
+      `| {YYYY-MM-DD} | {area} | {title} | {comma-separated files} | {short sha or "pending"} | {takeaway} |`
+      (use `pending` for the commit until the user commits).
+
+- [ ] **11. Think before pushing.** Before any `git push`, verify:
       1. Will this work on Vercel (not just localhost)?
       2. Are all required env vars set on Vercel?
       3. Does the production DB have the right schema/data?
       4. Do file paths resolve correctly (no local-only files)?
       5. Does the hostname/URL pattern work on `vercel.app`?
+      Per CLAUDE.md the skill never commits or pushes — hand the user a proposed
+      commit message + the commands to run themselves.
+
+## Regression warning (during FIX)
+
+For files you're about to change, grep `.claude/bugs/INDEX.md` for the area/file. If a
+prior fix touched them, surface its `Takeaway` before changing — your fix may interact
+with or undo it. Inform-only; the user decides relevance.
+
+## Close without fixing
+
+If it turns out not to be a bug: revert any exploratory changes, `rm -rf` the active
+`.claude-local/bugs/active/{slug}/` dir, and do NOT add a row to INDEX (only real fixes
+become project knowledge).

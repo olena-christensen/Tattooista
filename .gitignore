@@ -79,6 +79,12 @@ web_modules/
 .env.production.local
 .env.local
 
+# macOS Finder metadata
+.DS_Store
+
+# Claude local working files (in-progress bug state — not team knowledge until archived)
+.claude-local/
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
