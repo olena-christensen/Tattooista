@@ -4,5 +4,5 @@
 > Used by the FIX phase to surface regression warnings when a prior fix touched the same files/area.
 > Only **fixed** bugs land here — bugs closed as "not a bug" do not.
 
-| Date | Area | Title | Files | Commit | Takeaway |
-|---|---|---|---|---|---|
+| Issue | Date | Area | Title | Files | Commit | Takeaway |
+|---|---|---|---|---|---|---|
