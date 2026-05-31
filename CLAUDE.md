@@ -44,15 +44,19 @@ When building a new feature, page, component, or model:
 
 1. **Brainstorm/plan first**, then build via the `feature-dev:feature-dev` skill. Use the `tattooista-styling` skill for ALL UI/styling work. (There is intentionally no custom "feature" skill — these conventions live here in CLAUDE.md.)
 2. **Multi-tenant by default** — see Architecture below. Any new model gets a `studioId`; any tenant-scoped query resolves the current studio and filters by it, and gets a `vitest` test in `tattooista-next/tests/lib/`.
-3. **Every feature gets a doc** in `.claude/features/<slug>.md` (template: `.claude/features/_TEMPLATE.md`). Create it while building and keep it current — the feature is not done until the doc exists. A feature without a doc leaves no trail.
+3. **Every feature gets a doc** in `.claude/features/<slug>.md` (template: `.claude/features/_TEMPLATE.md`). Create it while building and keep it current — the feature is not done until the doc exists. A feature without a doc leaves no trail. When the work has a GitHub issue (the board card), the slug is `<issue#>-<name>` and the doc's `## Issue` links it.
 
 ## Fixing a bug
 
-Use the `bug` skill — it drives a documented lifecycle: working state in `.claude-local/bugs/active/<slug>/bug.md` (gitignored), then on fix it's **archived** to `.claude/bugs/archived/<slug>.md` and a row is appended to `.claude/bugs/INDEX.md` (the append-only regression-warning log). Before changing files, check INDEX.md for prior fixes in the same area. No ticket system — slugs are plain descriptive names.
+Use the `bug` skill — it drives a documented lifecycle: working state in `.claude-local/bugs/active/<slug>/bug.md` (gitignored), then on fix it's **archived** to `.claude/bugs/archived/<slug>.md` and a row is appended to `.claude/bugs/INDEX.md` (the append-only regression-warning log). Before changing files, check INDEX.md for prior fixes in the same area.
+
+## Task board (GitHub Projects)
+
+Work is tracked on a GitHub Projects board where **issues are the cards**. An issue `#42` maps to doc slug `42-<short-name>`; the doc links the issue, the issue gets the deep context from the doc. Reference `Closes #42` in commits/PRs so the board auto-moves to Done. Terminal recipes: `.claude/github-board.md`. Labels: `scripts/setup-github-labels.sh`.
 
 ## Read the feature/bug doc first; cite a source
 
-- **READ THE DOC FIRST.** Before answering anything about a feature under active development, read its `.claude/features/<slug>.md` doc; for anything about a past bug, read `.claude/bugs/INDEX.md` (and the archived bug doc it points to). Read the relevant source in full too, THEN answer. Decisions, file locations, and prior context are already written down — don't re-derive or ask what the doc answers.
+- **READ THE DOC FIRST.** Before answering anything about a feature under active development, read its `.claude/features/<slug>.md` doc (and its linked GitHub issue); for anything about a past bug, read `.claude/bugs/INDEX.md` (and the archived bug doc it points to). Read the relevant source in full too, THEN answer. Decisions, file locations, and prior context are already written down — don't re-derive or ask what the doc answers.
 - **CITE A SOURCE FOR EVERY PROJECT CLAIM, OR SAY "I DON'T KNOW."** Any statement about how this project/feature works must be backed by a specific file, line, or quote. If you can't point to one, say you don't know and go read. Never answer from conversation momentum or assumption.
 
 ---

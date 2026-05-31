@@ -1,0 +1,42 @@
+name: Feature
+description: Build a new page, component, model, or capability
+title: "[Feature]: "
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Filing this creates the board card. When you build it, the feature gets a
+        doc at `.claude/features/<issue#>-<slug>.md` (see `_TEMPLATE.md`).
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What this does and why it exists (one or two sentences).
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What's in. What's explicitly out / deferred.
+  - type: dropdown
+    id: mern
+    attributes:
+      label: MERN source of truth
+      description: Is there an original in Client/ to reproduce, or is this net-new?
+      options:
+        - Migrated from Client/ (reproduce the original exactly)
+        - Net-new (no original)
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Area
+      placeholder: portfolio, booking, reviews, admin, platform-landing
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Constraints, multi-tenant considerations, anything else.

@@ -3,6 +3,9 @@
 ## Status
 IN PROGRESS
 
+## Issue
+{GitHub issue URL — the board card, e.g. https://github.com/Menolas/Tattooista/issues/42}
+
 ## Branch
 {git branch}
 

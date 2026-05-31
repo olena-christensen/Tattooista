@@ -16,8 +16,10 @@ Every fixed bug leaves a trail, mirroring the feature docs:
 - **Archived** (fixed, committed): `.claude/bugs/archived/{slug}.md`
 - **Index** (append-only regression log): `.claude/bugs/INDEX.md`
 
-`{slug}` is a plain descriptive kebab-case name (no ticket system here) — e.g.
-`portfolio-leaks-across-studios`, `avatar-404-on-vercel`.
+`{slug}` is `<issue#>-<kebab-name>` from the GitHub issue (the board card) —
+e.g. `42-portfolio-leaks-across-studios`. No issue yet? Use a plain kebab name
+and add the issue link to the doc's `## Issue` once it exists. See
+`.claude/github-board.md`.
 
 Create a TodoWrite item per phase and work them in order.
 
@@ -43,10 +45,13 @@ Create a TodoWrite item per phase and work them in order.
       - Local Postgres is NOT prod Neon. Confirm the data assumption holds in the
         environment where the bug actually occurs.
 
-- [ ] **3. Scope tasks with the user, then create bug.md.** Read
+- [ ] **3. Read the issue, scope tasks, then create bug.md.** If an issue
+      number/URL was given, read it (`gh issue view <#>`) — repro/expected/actual
+      and Area usually come straight from the Bug template. Read
       `.claude/bugs/TEMPLATE.md`, create `.claude-local/bugs/active/{slug}/bug.md`,
-      and fill: title, `## Status: IN PROGRESS`, `## Branch` (current), `## Environment`,
-      `## Area`, `## Bug Summary` (repro/expected/actual/affected), `## Tasks → To Do`.
+      and fill: title, `## Status: IN PROGRESS`, `## Issue` (the issue URL),
+      `## Branch` (current), `## Environment`, `## Area`,
+      `## Bug Summary` (repro/expected/actual/affected), `## Tasks → To Do`.
 
 ## FIX — one task at a time (assess → approve → implement → complete)
 
@@ -85,8 +90,9 @@ Create a TodoWrite item per phase and work them in order.
 
 - [ ] **10. Append to INDEX.** Insert a row at the top of the table in
       `.claude/bugs/INDEX.md`:
-      `| {YYYY-MM-DD} | {area} | {title} | {comma-separated files} | {short sha or "pending"} | {takeaway} |`
-      (use `pending` for the commit until the user commits).
+      `| {#issue or "—"} | {YYYY-MM-DD} | {area} | {title} | {comma-separated files} | {short sha or "pending"} | {takeaway} |`
+      (use `pending` for the commit until the user commits). Suggest `Closes #<issue>`
+      in the commit/PR so the board card auto-moves to Done.
 
 - [ ] **11. Think before pushing.** Before any `git push`, verify:
       1. Will this work on Vercel (not just localhost)?
@@ -107,4 +113,4 @@ with or undo it. Inform-only; the user decides relevance.
 
 If it turns out not to be a bug: revert any exploratory changes, `rm -rf` the active
 `.claude-local/bugs/active/{slug}/` dir, and do NOT add a row to INDEX (only real fixes
-become project knowledge).
+become project knowledge). Suggest the user close the GitHub issue with the reason.

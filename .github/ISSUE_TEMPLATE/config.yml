@@ -1,0 +1,3 @@
+# Nudge toward the structured templates so issues and .claude/ docs share a shape.
+# Flip to `true` if you ever want plain blank issues again.
+blank_issues_enabled: false

@@ -1,0 +1,55 @@
+name: Bug
+description: Something is broken or behaving unexpectedly
+title: "[Bug]: "
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Filing this creates the board card. When you start the fix, the `bug`
+        skill turns it into `.claude-local/bugs/active/<issue#>-<slug>/bug.md`.
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where does it actually reproduce? (Local Postgres is NOT prod Neon.)
+      options:
+        - Local (Docker Postgres)
+        - Vercel (Neon prod)
+        - Both
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Area
+      description: Feature-area tag (used for grouping + regression warnings).
+      placeholder: tenant-isolation, image-rendering, auth, admin-dashboard, portfolio, seed
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+    validations:
+      required: true
+  - type: input
+    id: affected
+    attributes:
+      label: Affected
+      placeholder: URLs, components, studios, viewports
