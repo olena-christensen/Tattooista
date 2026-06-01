@@ -24,6 +24,19 @@ echo "Target repo: $REPO"
 command -v gh >/dev/null || { echo "gh not installed"; exit 1; }
 gh auth status >/dev/null 2>&1 || { echo "Run: gh auth login"; exit 1; }
 
+# --- guard: refuse to run twice ---
+# Checks the live issue list (not the lagging search index) for a sentinel title.
+# Override with FORCE=1 if you really mean to run again.
+SENTINEL="Resubmit Paddle domain verification"
+if gh issue list --repo "$REPO" --state all --limit 300 --json title --jq '.[].title' 2>/dev/null \
+     | grep -qxF "$SENTINEL"; then
+  echo "Guard: an issue titled \"$SENTINEL\" already exists —"
+  echo "looks like this script already ran. Aborting to avoid 53 duplicates."
+  echo "To run anyway (you'll get dupes): FORCE=1 bash scripts/create-go-live-issues.sh"
+  [ "${FORCE:-0}" = "1" ] || exit 1
+  echo "FORCE=1 set — proceeding despite existing issues."
+fi
+
 # --- ensure labels (idempotent) ---
 lbl() { gh label create "$1" --color "$2" --description "$3" --repo "$REPO" --force >/dev/null; }
 lbl "type:feature"   "0e8a16" "New code / capability"
