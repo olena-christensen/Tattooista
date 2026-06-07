@@ -27,13 +27,12 @@ Only `support@` and `hello@` `nothingweird.agency` are real mailboxes today, so:
 - `legal` (Legal / IP) → **support@nothingweird.agency**
 Category is preserved in the subject tag regardless. Re-point the `CATEGORY_TO_ALIAS` map as more aliases come online.
 
-## Env vars (NEW — independent from legacy SMTP_*)
-Set in Vercel (and local `.env` to test sending). User sets these; not in code, no secrets committed:
-- `CONTACT_SMTP_HOST=smtppro.zoho.eu`
-- `CONTACT_SMTP_PORT=465`
-- `CONTACT_SMTP_USER=<a real Zoho mailbox, e.g. support@ or hello@ nothingweird.agency>`
-- `CONTACT_SMTP_PASS=<that mailbox's Zoho app password>`
-`from` is derived from `CONTACT_SMTP_USER` (Zoho only sends as an owned address). No separate FROM var.
+## Env vars (reuses shared `ZOHO_SMTP_*` — independent from legacy `SMTP_*`)
+Only two secrets needed; host/port default to Zoho in code (`smtppro.zoho.eu` / `465`, override via `ZOHO_SMTP_HOST`/`ZOHO_SMTP_PORT` if ever needed):
+- `ZOHO_SMTP_USER=<a real Zoho mailbox, e.g. support@nothingweird.agency>`
+- `ZOHO_SMTP_PASS=<that mailbox's Zoho app password>`
+`from` is derived from `ZOHO_SMTP_USER` (Zoho only sends as an owned address). No separate FROM var.
+Vercel already has `ZOHO_SMTP_USER`/`ZOHO_SMTP_PASS`; local `.env` uses the same two (renamed from the original `CONTACT_SMTP_*` to avoid breeding parallel vars).
 
 ## Multi-tenant notes
 Platform-level, **not** tenant-scoped. No `studioId`, no DB. The legacy `lib/email.ts` (verification/reset/booking, still on the inherited Gmail `SMTP_*`) is intentionally left alone.
