@@ -25,6 +25,7 @@ Source: nothing-weird-transfer-notes.md (sec 3, 4, 5) + locked working-session c
 **Revisit list (safe placeholder taken, real decision pending):**
 - Free trial: terms say Yes/14-day/suspend-don't-charge, but trial-vs-freemium product decision still open.
 - Legal-name string consistency: use ONE spelling of the FOP legal name ("Olena Christensen, Individual Entrepreneur (FOP)") across ALL docs — privacy, terms, cookie, DPA — AND across both Nothing Weird projects (Tattooista + The Veil). No official Diia English version exists, so the chosen transliteration is the source of truth. Audit + align on self-host.
+- Refund doc shipping-language cleanup: Termly Return Policy generator emits physical-retail wording ("return package", "postmarked", "return shipping", "Company pays"). None applies to a digital subscription. Before hosting /refund, strip/reword all shipping/postmark/package language so it reads as "request a refund within 14 days" etc. Refund window = 14 days, processing = 14 days.
 
 ---
 
@@ -32,11 +33,11 @@ Source: nothing-weird-transfer-notes.md (sec 3, 4, 5) + locked working-session c
 
 The Paddle account is live and identity-verified. Domain verification is the last gate before going live with checkout, and it needs the four legal URLs to resolve to real content. So tomorrow is the legal-and-pricing-pages sprint.
 
-- [ ] Generate the B2B SaaS subscription agreement in Termly (not consumer ToU — Tattooista sells to studios)
+- [x] Terms and Conditions generated + shipped at /terms (done 7 Jun)
 - [x] Generate the privacy policy + self-hosted at /privacy (done 7 Jun)
 - [x] GPC wired end-to-end: Sec-GPC header → GpcProvider → resolveEffectiveConsent hard-override (done 7 Jun)
 - [x] Cookie policy generated + live at /cookie-policy (done; may need revisiting)
-- [ ] Generate the refund policy (Paddle's domain verification specifically requires this URL)
+- [x] Refund policy generated in Termly (done 7 Jun) — needs shipping-language cleanup before /refund ships (see revisit list); NOT in global footer, link from pricing/checkout + terms only
 - [ ] Generate the DPA template (downloadable PDF studios can sign — separate document, not a page)
 - [ ] Create the four routes in `src/app/(public)/`:
   - `/pricing`

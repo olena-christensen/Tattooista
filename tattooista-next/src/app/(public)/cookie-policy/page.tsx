@@ -102,14 +102,9 @@ export default function CookiePolicyPage() {
             and &ldquo;<strong className="text-foreground font-semibold">our</strong>
             &rdquo;) uses cookies and similar technologies to recognize you when you
             visit our website at{" "}
-            <a
-              href="https://tattooista.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
+            <Link href="/" className={linkClass}>
               https://tattooista.app
-            </a>{" "}
+            </Link>{" "}
             (&ldquo;<strong className="text-foreground font-semibold">Website</strong>
             &rdquo;). It explains what these technologies are and why we use them, as
             well as your rights to control our use of them.

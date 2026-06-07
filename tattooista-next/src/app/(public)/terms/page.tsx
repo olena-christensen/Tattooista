@@ -143,14 +143,9 @@ export default function TermsPage() {
           </p>
           <p className={bodyClass}>
             We operate the website{" "}
-            <a
-              href="https://tattooista.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
+            <Link href="/" className={linkClass}>
               https://tattooista.app
-            </a>{" "}
+            </Link>{" "}
             (the &ldquo;<strong className={bold}>Site</strong>&rdquo;), as well as any other
             related products and services that refer or link to these legal terms (the
             &ldquo;<strong className={bold}>Legal Terms</strong>&rdquo;) (collectively, the
@@ -481,6 +476,14 @@ export default function TermsPage() {
             We may, from time to time, make changes to the subscription fee and will
             communicate any price changes to you in accordance with applicable law.
           </p>
+          <h3 className={subheadingClass}>Refunds</h3>
+          <p className={bodyClass}>
+            Refunds are governed by our Refund Policy:{" "}
+            <Link href="/refund" className={linkClass}>
+              https://tattooista.app/refund
+            </Link>
+            .
+          </p>
 
           <h2 id="prohibited" className={headingClass}>
             7. Prohibited Activities
@@ -717,14 +720,9 @@ export default function TermsPage() {
           </h2>
           <p className={bodyClass}>
             We care about data privacy and security. Please review our Privacy Policy:{" "}
-            <a
-              href="https://tattooista.app/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
+            <Link href="/privacy" className={linkClass}>
               https://tattooista.app/privacy
-            </a>
+            </Link>
             . By using the Services, you agree to be bound by our Privacy Policy, which is
             incorporated into these Legal Terms. Please be advised the Services are hosted in
             the United States and Germany. If you access the Services from any other region
