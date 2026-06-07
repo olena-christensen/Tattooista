@@ -20,7 +20,7 @@ export function PlatformFooter() {
         </Link>
         <div className="flex gap-6">
           <Link href="/privacy" className={linkClass}>Privacy</Link>
-          <a href="#" className={linkClass}>Terms</a>
+          <Link href="/terms" className={linkClass}>Terms</Link>
           <Link href="/cookie-policy" className={linkClass}>Cookie Policy</Link>
           <button
             type="button"

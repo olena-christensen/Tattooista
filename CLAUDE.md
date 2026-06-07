@@ -6,6 +6,13 @@ NEVER run commands, install packages, create/modify files, or take ANY action wi
 Always: describe what you want to do → wait for approval → then act.
 No exceptions.
 
+## FORBIDDEN: Git commits and pushes
+
+NEVER run `git commit`, `git push`, `git merge`, or create PRs. Committing and pushing to the remote repo are the USER's responsibility ALONE.
+Make the file changes, report what changed, and STOP. Do not commit, even if the work is finished, verified, and tests pass. Do not offer to commit. Do not stage with the intent to commit.
+If a workflow (a skill, a slash command, etc.) would normally end in a commit/push, do everything up to that point and hand it back to the user.
+No exceptions.
+
 ## FORBIDDEN: External accounts
 
 NEVER touch, modify, create, or delete anything on external accounts (Vercel, GitHub, npm, databases, any third-party service).
