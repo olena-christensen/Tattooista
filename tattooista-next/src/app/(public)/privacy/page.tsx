@@ -267,14 +267,9 @@ export default function PrivacyPolicyPage() {
           <ul className={listClass}>
             <li className={listItemClass}>
               Visit our website at{" "}
-              <a
-                href="https://tattooista.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={linkClass}
-              >
+              <Link href="/" className={linkClass}>
                 https://tattooista.app
-              </a>{" "}
+              </Link>{" "}
               or any website of ours that links to this Privacy Notice
             </li>
             <li className={listItemClass}>
@@ -519,14 +514,9 @@ export default function PrivacyPolicyPage() {
           <p className={bodyClass}>
             Like many businesses, we also collect information through cookies and similar
             technologies. You can find out more about this in our Cookie Notice:{" "}
-            <a
-              href={COOKIE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
+            <Link href="/cookie-policy" className={linkClass}>
               {COOKIE_URL}
-            </a>
+            </Link>
             .
           </p>
           <p className={bodyClass}>The information we collect includes:</p>
@@ -648,14 +638,9 @@ export default function PrivacyPolicyPage() {
               may process your information to develop and display personalized content and
               advertising tailored to your interests, location, and more. For more
               information see our Cookie Notice:{" "}
-              <a
-                href={COOKIE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={linkClass}
-              >
+              <Link href="/cookie-policy" className={linkClass}>
                 {COOKIE_URL}
-              </a>
+              </Link>
               .
             </li>
             <li className={listItemClass}>
@@ -912,14 +897,9 @@ export default function PrivacyPolicyPage() {
           <p className={bodyClass}>
             Specific information about how we use such technologies and how you can refuse
             certain cookies is set out in our Cookie Notice:{" "}
-            <a
-              href={COOKIE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
+            <Link href="/cookie-policy" className={linkClass}>
               {COOKIE_URL}
-            </a>
+            </Link>
             .
           </p>
           <h3 className={subheadingClass}>Google Analytics</h3>
@@ -1258,14 +1238,9 @@ export default function PrivacyPolicyPage() {
               opt out of interest-based advertising by advertisers
             </a>{" "}
             on our Services. For further information, please see our Cookie Notice:{" "}
-            <a
-              href={COOKIE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
+            <Link href="/cookie-policy" className={linkClass}>
               {COOKIE_URL}
-            </a>
+            </Link>
             .
           </p>
           <p className={bodyClass}>
