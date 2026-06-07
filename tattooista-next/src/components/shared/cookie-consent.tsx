@@ -1,47 +1,25 @@
 "use client"
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
-
-const CONSENT_KEY = "cookie_consent"
-const CONSENT_VERSION = 1
-const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365
-
-type Consent = {
-  v: number
-  necessary: true
-  analytics: boolean
-  marketing: boolean
-}
-
-function readConsent(): Consent | null {
-  if (typeof document === "undefined") return null
-  const raw = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith(`${CONSENT_KEY}=`))
-    ?.split("=")[1]
-  if (!raw) return null
-  try {
-    const parsed = JSON.parse(decodeURIComponent(raw)) as Consent
-    return parsed?.v === CONSENT_VERSION ? parsed : null
-  } catch {
-    return null
-  }
-}
-
-function persistConsent(consent: Consent) {
-  const value = encodeURIComponent(JSON.stringify(consent))
-  // Cookie so the server can read the choice via next/headers cookies().
-  document.cookie = `${CONSENT_KEY}=${value}; max-age=${ONE_YEAR_SECONDS}; path=/; SameSite=Lax`
-  // localStorage mirror for client-side reads.
-  try {
-    localStorage.setItem(CONSENT_KEY, JSON.stringify(consent))
-  } catch {
-    // localStorage may be unavailable (private mode / blocked) — the cookie is the source of truth.
-  }
-}
+import {
+  CONSENT_VERSION,
+  DENY_ALL,
+  isGpcActiveClient,
+  persistConsent,
+  readConsent,
+  resolveEffectiveConsent,
+  type Consent,
+} from "@/lib/consent"
 
 // External store: tracks whether a consent decision already exists. The only
 // thing that mutates it is this component's own save(), so subscribers are
@@ -55,7 +33,23 @@ function subscribe(onChange: () => void) {
   }
 }
 
+// Cached snapshot of the stored consent. readConsent() returns a fresh object
+// each call, which would make useSyncExternalStore loop forever (it compares
+// snapshots with Object.is). Cache the parsed value and invalidate only when a
+// choice is saved, so consumers get a stable reference between changes.
+let consentCache: Consent | null = null
+let consentCacheValid = false
+
+function getConsentSnapshot(): Consent | null {
+  if (!consentCacheValid) {
+    consentCache = readConsent()
+    consentCacheValid = true
+  }
+  return consentCache
+}
+
 function notifyConsentChange() {
+  consentCacheValid = false
   for (const l of listeners) l()
 }
 
@@ -93,8 +87,55 @@ function resetForceOpen() {
 // True once a choice has been made. Server snapshot returns true so the banner
 // renders nothing during SSR/initial hydration (document.cookie is unreadable
 // there); React then re-reads on the client to reveal it on a first visit.
-const consentDecided = () => readConsent() !== null
+const consentDecided = () => getConsentSnapshot() !== null
 const consentDecidedServer = () => true
+
+// Server snapshot of the stored consent (cookie unreadable during SSR).
+const consentSnapshotServer = (): Consent | null => null
+
+// ---- Global Privacy Control ----
+//
+// GPC arrives two ways: the Sec-GPC request header (read server-side in the
+// root layout and threaded in via GpcContext) and navigator.globalPrivacyControl
+// on the client. Both feed one boolean. The server/hydration snapshot uses the
+// header value (from context) so there is no flash; the client snapshot reads
+// navigator. GPC is constant for a page load, so the store never notifies.
+const GpcContext = createContext(false)
+
+export function GpcProvider({
+  value,
+  children,
+}: {
+  value: boolean
+  children: React.ReactNode
+}) {
+  return <GpcContext.Provider value={value}>{children}</GpcContext.Provider>
+}
+
+const subscribeGpcNoop = () => () => {}
+
+function useGpcActive(): boolean {
+  const gpcServer = useContext(GpcContext)
+  return useSyncExternalStore(
+    subscribeGpcNoop,
+    isGpcActiveClient,
+    () => gpcServer
+  )
+}
+
+// THE single source of truth for effective consent. Future tracker gating (GA,
+// ad scripts — none exist yet) must read this hook so GPC is always accounted
+// for. Server/hydration snapshot resolves to DENY_ALL (trackers off until the
+// client confirms a stored choice — the safe direction).
+export function useEffectiveConsent(): Consent {
+  const gpcActive = useGpcActive()
+  const stored = useSyncExternalStore(
+    subscribe,
+    getConsentSnapshot,
+    consentSnapshotServer
+  )
+  return resolveEffectiveConsent(stored, gpcActive)
+}
 
 function Toggle({
   checked,
@@ -132,6 +173,9 @@ export function CookieConsent() {
     consentDecided,
     consentDecidedServer
   )
+  // GPC hard-override: while active, analytics/marketing are forced off and the
+  // toggles are locked. See resolveEffectiveConsent for the decision rationale.
+  const gpcActive = useGpcActive()
   // True while the user has explicitly re-opened the banner via
   // openCookiePreferences() — overrides `decided` so they can change their mind.
   const requested = useSyncExternalStore(
@@ -145,11 +189,17 @@ export function CookieConsent() {
   const [analytics, setAnalytics] = useState(false)
   const [marketing, setMarketing] = useState(false)
 
-  const save = useCallback((choice: { analytics: boolean; marketing: boolean }) => {
-    persistConsent({ v: CONSENT_VERSION, necessary: true, ...choice })
-    notifyConsentChange()
-    resetForceOpen()
-  }, [])
+  const save = useCallback(
+    (choice: { analytics: boolean; marketing: boolean }) => {
+      // Under GPC the user cannot opt in, so every save clamps to deny. This is
+      // an explicit user action (a click), not an auto-write from GPC.
+      const next = gpcActive ? DENY_ALL : { v: CONSENT_VERSION, necessary: true as const, ...choice }
+      persistConsent(next)
+      notifyConsentChange()
+      resetForceOpen()
+    },
+    [gpcActive]
+  )
 
   const open = requested || (!decided && !dismissed)
 
@@ -180,6 +230,11 @@ export function CookieConsent() {
   }, [open])
 
   if (!open) return null
+
+  // While GPC is active the analytics/marketing toggles always read off and are
+  // disabled, regardless of local state.
+  const analyticsChecked = gpcActive ? false : analytics
+  const marketingChecked = gpcActive ? false : marketing
 
   return (
     <div
@@ -236,6 +291,13 @@ export function CookieConsent() {
               .
             </p>
 
+            {gpcActive && (
+              <p className="mt-3 text-xs leading-relaxed text-foreground/60">
+                Global Privacy Control detected in your browser — analytics and
+                marketing are turned off automatically and can&apos;t be enabled here.
+              </p>
+            )}
+
             <ul className="mt-5 flex flex-col gap-3">
               <li className="flex items-center justify-between gap-4 border-b border-foreground/10 pb-3">
                 <div>
@@ -258,8 +320,9 @@ export function CookieConsent() {
                   </p>
                 </div>
                 <Toggle
-                  checked={analytics}
+                  checked={analyticsChecked}
                   onChange={setAnalytics}
+                  disabled={gpcActive}
                   label="Analytics cookies"
                 />
               </li>
@@ -273,8 +336,9 @@ export function CookieConsent() {
                   </p>
                 </div>
                 <Toggle
-                  checked={marketing}
+                  checked={marketingChecked}
                   onChange={setMarketing}
+                  disabled={gpcActive}
                   label="Marketing cookies"
                 />
               </li>
@@ -282,29 +346,44 @@ export function CookieConsent() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row lg:w-56 lg:flex-col">
-            <Button
-              type="button"
-              onClick={() => save({ analytics: true, marketing: true })}
-              className="h-11 border-2 border-foreground bg-foreground px-6 text-xs font-bold uppercase tracking-wider text-background hover:bg-transparent hover:text-foreground"
-            >
-              Accept all
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => save({ analytics: false, marketing: false })}
-              className="h-11 border-2 border-foreground bg-transparent px-6 text-xs font-bold uppercase tracking-wider text-foreground hover:bg-foreground hover:text-background"
-            >
-              Reject all
-            </Button>
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => save({ analytics, marketing })}
-              className="h-auto px-0 text-xs font-semibold uppercase tracking-wider text-foreground/70 hover:text-foreground"
-            >
-              Save preferences
-            </Button>
+            {gpcActive ? (
+              // GPC forces analytics + marketing off, so "Accept all" is
+              // meaningless. A single explicit acknowledgment persists deny and
+              // stops the banner from reappearing.
+              <Button
+                type="button"
+                onClick={() => save({ analytics: false, marketing: false })}
+                className="h-11 border-2 border-foreground bg-foreground px-6 text-xs font-bold uppercase tracking-wider text-background hover:bg-transparent hover:text-foreground"
+              >
+                Got it
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  onClick={() => save({ analytics: true, marketing: true })}
+                  className="h-11 border-2 border-foreground bg-foreground px-6 text-xs font-bold uppercase tracking-wider text-background hover:bg-transparent hover:text-foreground"
+                >
+                  Accept all
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => save({ analytics: false, marketing: false })}
+                  className="h-11 border-2 border-foreground bg-transparent px-6 text-xs font-bold uppercase tracking-wider text-foreground hover:bg-foreground hover:text-background"
+                >
+                  Reject all
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => save({ analytics, marketing })}
+                  className="h-auto px-0 text-xs font-semibold uppercase tracking-wider text-foreground/70 hover:text-foreground"
+                >
+                  Save preferences
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -19,7 +19,7 @@ export function PlatformFooter() {
           Tattooista
         </Link>
         <div className="flex gap-6">
-          <a href="#" className={linkClass}>Privacy</a>
+          <Link href="/privacy" className={linkClass}>Privacy</Link>
           <a href="#" className={linkClass}>Terms</a>
           <Link href="/cookie-policy" className={linkClass}>Cookie Policy</Link>
           <button

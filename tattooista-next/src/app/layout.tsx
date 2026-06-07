@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { Cormorant_Garamond, DM_Sans } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/shared/providers"
@@ -37,15 +38,20 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Global Privacy Control: detect the Sec-GPC request header server-side so the
+  // consent state resolves correctly on first paint (the client confirms via
+  // navigator.globalPrivacyControl after hydration).
+  const gpcServer = (await headers()).get("sec-gpc") === "1"
+
   return (
     <html lang="en" className={`dark ${cormorant.variable} ${dmSans.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased">
-        <Providers>{children}</Providers>
+        <Providers gpcServer={gpcServer}>{children}</Providers>
       </body>
     </html>
   )
