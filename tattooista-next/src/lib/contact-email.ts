@@ -4,21 +4,21 @@ import type { ContactCategory, ContactInput } from "@/lib/validations/contact"
 
 // Platform contact form mailer. Intentionally INDEPENDENT from lib/email.ts
 // (which is the inherited single-studio transactional stack: verification,
-// password reset, booking notices). This uses its own CONTACT_SMTP_* env vars
-// so the two never interfere.
+// password reset, booking notices). Uses the shared ZOHO_SMTP_* env vars; host
+// and port default to Zoho so only the USER/PASS secrets need configuring.
 
 let contactTransporter: nodemailer.Transporter | null = null
 
 function getContactTransporter(): nodemailer.Transporter {
   if (!contactTransporter) {
-    const host = process.env.CONTACT_SMTP_HOST
-    const port = parseInt(process.env.CONTACT_SMTP_PORT || "465", 10)
-    const user = process.env.CONTACT_SMTP_USER
-    const pass = process.env.CONTACT_SMTP_PASS
+    const host = process.env.ZOHO_SMTP_HOST || "smtppro.zoho.eu"
+    const port = parseInt(process.env.ZOHO_SMTP_PORT || "465", 10)
+    const user = process.env.ZOHO_SMTP_USER
+    const pass = process.env.ZOHO_SMTP_PASS
 
-    if (!host || !user || !pass) {
+    if (!user || !pass) {
       throw new Error(
-        "Contact SMTP is not configured. Set CONTACT_SMTP_HOST, CONTACT_SMTP_USER, and CONTACT_SMTP_PASS."
+        "Zoho SMTP is not configured. Set ZOHO_SMTP_USER and ZOHO_SMTP_PASS."
       )
     }
 
@@ -51,7 +51,7 @@ function escapeHtml(value: string): string {
 
 export async function sendContactEmail(data: ContactInput) {
   const to = CATEGORY_TO_ALIAS[data.category]
-  const sender = process.env.CONTACT_SMTP_USER as string
+  const sender = process.env.ZOHO_SMTP_USER as string
 
   try {
     await getContactTransporter().sendMail({
