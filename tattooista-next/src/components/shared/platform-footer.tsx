@@ -29,7 +29,7 @@ export function PlatformFooter() {
           >
             Cookie Preferences
           </button>
-          <a href="#" className={linkClass}>Contact</a>
+          <Link href="/contact" className={linkClass}>Contact</Link>
         </div>
         <span className="text-[13px] text-muted-foreground">&copy; 2026 Tattooista</span>
       </Container>

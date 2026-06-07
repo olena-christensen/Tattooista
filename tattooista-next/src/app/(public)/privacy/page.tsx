@@ -392,14 +392,9 @@ export default function PrivacyPolicyPage() {
           <p className={bodyClass}>
             <strong className={bold}>How do you exercise your rights?</strong> The easiest
             way to exercise your rights is by visiting{" "}
-            <a
-              href={CONTACT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
+            <Link href="/contact" className={linkClass}>
               {CONTACT_URL}
-            </a>
+            </Link>
             , or by contacting us. We will consider and act upon any request in accordance
             with applicable data protection laws.
           </p>
@@ -1484,14 +1479,9 @@ export default function PrivacyPolicyPage() {
           <h3 className={subheadingClass}>How to Exercise Your Rights</h3>
           <p className={bodyClass}>
             To exercise these rights, you can contact us by visiting{" "}
-            <a
-              href={CONTACT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
+            <Link href="/contact" className={linkClass}>
               {CONTACT_URL}
-            </a>
+            </Link>
             , by emailing us at{" "}
             <a href={`mailto:${PRIVACY_EMAIL}`} className={linkClass}>
               {PRIVACY_EMAIL}
@@ -1610,14 +1600,9 @@ export default function PrivacyPolicyPage() {
             processing of your personal information. These rights may be limited in some
             circumstances by applicable law. To request to review, update, or delete your
             personal information, please visit:{" "}
-            <a
-              href={CONTACT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
+            <Link href="/contact" className={linkClass}>
               {CONTACT_URL}
-            </a>
+            </Link>
             .
           </p>
         </div>
