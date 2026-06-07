@@ -37,6 +37,7 @@ export default auth(async (req) => {
   const isPlatformPublicRoute =
     nextUrl.pathname === "/" ||
     nextUrl.pathname.startsWith("/api/auth") ||
+    nextUrl.pathname.startsWith("/api/contact") ||
     nextUrl.pathname.startsWith("/verify-email") ||
     nextUrl.pathname.startsWith("/reset-password")
 
