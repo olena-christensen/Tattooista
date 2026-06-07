@@ -7,13 +7,35 @@ Tomorrow's focus is at the top. The rest is the wider picture, organised by trac
 
 ---
 
+## Answering legal-doc / Termly questions — standing rules
+
+The decisions we always apply, so they're not reconstructed each screen.
+Source: nothing-weird-transfer-notes.md (sec 3, 4, 5) + locked working-session calls.
+
+1. Default **YES** to any capability the platform will plausibly build; **NO** only for genuinely harmful or irrelevant items (e.g. CSAM, physical-goods shipping). Keep privacy / terms / cookie / DPA answers consistent.
+2. **B2B, not B2C** — docs are a SaaS subscription/service agreement. The "user" is the studio (internal business use), not the studio's walk-in clients.
+3. Tattooista is a data **processor**; studios are controllers. DPA required (separate signable doc).
+4. Payment = **Option A only**: subscription fee charged to studios. NOT a payment facilitator / marketplace for studios' own client payments.
+5. **Paddle = Merchant of Record** — handles EU VAT. Still collect studio VAT numbers for B2B reverse-charge (VIES validation).
+6. Hosting disclosure: app layer = **United States** (Vercel); database = **EU / Germany** (Neon).
+7. Base currency = **EUR**.
+8. Drop all tarot-era items: **no** 18+ age gate, **no** entertainment-only disclaimers, **no** divination category restrictions.
+9. A completed screen is final — do not re-open settled answers. BUT if the real decision is not ready, take the safe placeholder option to keep moving AND log it to the revisit list below.
+
+**Revisit list (safe placeholder taken, real decision pending):**
+- Free trial: terms say Yes/14-day/suspend-don't-charge, but trial-vs-freemium product decision still open.
+- Legal-name string consistency: use ONE spelling of the FOP legal name ("Olena Christensen, Individual Entrepreneur (FOP)") across ALL docs — privacy, terms, cookie, DPA — AND across both Nothing Weird projects (Tattooista + The Veil). No official Diia English version exists, so the chosen transliteration is the source of truth. Audit + align on self-host.
+
+---
+
 ## Tomorrow — Termly day
 
 The Paddle account is live and identity-verified. Domain verification is the last gate before going live with checkout, and it needs the four legal URLs to resolve to real content. So tomorrow is the legal-and-pricing-pages sprint.
 
 - [ ] Generate the B2B SaaS subscription agreement in Termly (not consumer ToU — Tattooista sells to studios)
-- [ ] Generate the privacy policy (positioning: Tattooista is a data **processor**, studios are controllers)
-- [ ] Generate the cookie policy
+- [x] Generate the privacy policy + self-hosted at /privacy (done 7 Jun)
+- [x] GPC wired end-to-end: Sec-GPC header → GpcProvider → resolveEffectiveConsent hard-override (done 7 Jun)
+- [x] Cookie policy generated + live at /cookie-policy (done; may need revisiting)
 - [ ] Generate the refund policy (Paddle's domain verification specifically requires this URL)
 - [ ] Generate the DPA template (downloadable PDF studios can sign — separate document, not a page)
 - [ ] Create the four routes in `src/app/(public)/`:
@@ -60,6 +82,7 @@ Once tiers are decided, this is the biggest single chunk of build work.
 - [ ] Build client-side token issuance endpoint
 - [ ] Initialise Paddle.js in the studio admin area
 - [ ] Checkout flow: studio admin → settings → upgrade → Paddle overlay → success/cancel
+- [ ] **URGENT** In-account cancellation flow (studio admin → settings → cancel → fires subscription.canceled) — terms promise users can cancel in-account; clause is false until this ships
 - [ ] Webhook handler at `src/app/api/paddle/webhook/route.ts` — handle `subscription.created`, `subscription.updated`, `subscription.canceled`, `subscription.past_due`
 - [ ] VAT number capture + VIES validation in studio onboarding (for EU B2B reverse-charge)
 - [ ] Plan-gated features in admin UI (some features only on PRO)
@@ -86,12 +109,20 @@ Some of this may already exist — verify rather than assume.
 - [ ] Studio invitation flow — does an OWNER inviting a STAFF member by email already work (token + email)?
 - [ ] Studio creation from landing — works, verified earlier
 - [ ] Email templates: verification, password reset, invitation, payment receipts. Paddle handles most billing receipts but supplemental templates are still on us.
+- [ ] Terms-update notification mechanism — terms promise users are notified of legal-terms changes; needs email-blast template + in-app notice + updated "last modified" date
+
+---
+
+## Social & accounts
+
+- [ ] Google OAuth social login (next-auth v5 Google provider) — declared in Termly privacy + terms
+- [ ] Social sharing on studio public profiles — share/links for Instagram, Facebook, TikTok, Pinterest
 
 ---
 
 ## Launch prep
 
-- [ ] Replace `tattooista-next.vercel.app` with a real domain
+- [x] Real domain live at tattooista.app (done)
 - [ ] DNS / SPF / DKIM / DMARC pattern replicated for the new domain (or point a subdomain at the existing Zoho mailbox)
 - [ ] Google Ads advertiser verification — landing must show clear pricing, refund policy, and contact (all of which Termly day delivers)
 - [ ] Full smoke test with two real studios end-to-end: signup → onboarding → upgrade → daily use → cancel → delete
