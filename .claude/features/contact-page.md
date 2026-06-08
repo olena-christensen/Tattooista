@@ -21,11 +21,12 @@ A platform-level `/contact` page (distinct from the per-studio one) with a real,
 - `src/components/shared/platform-footer.tsx` — **EDIT.** Footer "Contact" `<a href="#">` → `<Link href="/contact">`.
 
 ## Category → recipient routing (`contact-email.ts`)
-Only `support@` and `hello@` `nothingweird.agency` are real mailboxes today, so:
-- `general` (General / Support) → **hello@nothingweird.agency**
-- `dsar` (Data / Privacy) → **support@nothingweird.agency**
-- `legal` (Legal / IP) → **support@nothingweird.agency**
-Category is preserved in the subject tag regardless. Re-point the `CATEGORY_TO_ALIAS` map as more aliases come online.
+Mirrors the addresses published in the legal pages (all confirmed real Zoho mailboxes):
+- `general` (General / Support) → **support@nothingweird.agency**
+- `billing` (Billing / Refund) → **billing@nothingweird.agency** (matches /refund)
+- `dsar` (Data / Privacy) → **privacy@nothingweird.agency** (matches /privacy)
+- `legal` (Legal / IP) → **legal@nothingweird.agency** (matches /terms)
+Category is also preserved in the subject tag (`[tattooista:<category>]`).
 
 ## Env vars (reuses shared `ZOHO_SMTP_*` — independent from legacy `SMTP_*`)
 Only two secrets needed; host/port default to Zoho in code (`smtppro.zoho.eu` / `465`, override via `ZOHO_SMTP_HOST`/`ZOHO_SMTP_PORT` if ever needed):
@@ -44,5 +45,5 @@ Platform-level, **not** tenant-scoped. No `studioId`, no DB. The legacy `lib/ema
 ## TODO / follow-ups
 - Set the 4 `CONTACT_SMTP_*` env vars in Vercel; then valid submissions send (200) and arrive at hello@/support@.
 - Legacy cleanup (separate): `lib/email.ts` `FROM_EMAIL`/`ADMIN_EMAIL` point at non-existent `*@tattooista.com`; SMTP_* still on personal Gmail.
-- Legal pages still cite `privacy@`/`legal@`/`billing@`/`founder@` `nothingweird.agency` — confirm those aliases exist or repoint.
+- `privacy@`/`legal@`/`billing@` confirmed real (2026-06-07) and now wired into the contact form routing. (`founder@` from cookie-policy still unverified.)
 - Per-studio `[slug]/(public)/contacts/page.tsx` is an empty stub.

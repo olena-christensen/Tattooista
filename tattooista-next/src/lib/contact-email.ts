@@ -32,13 +32,14 @@ function getContactTransporter(): nodemailer.Transporter {
   return contactTransporter
 }
 
-// Category → recipient. Only support@/hello@ are real mailboxes today, so DSAR
-// and legal route to the monitored support inbox; the category is preserved in
-// the subject tag. Re-point freely as more aliases come online.
+// Category → recipient. Mirrors the addresses published in the legal pages:
+// privacy@ (DSAR / privacy rights, per /privacy) and legal@ (legal / IP, per
+// /terms). General support goes to support@. Category is also in the subject tag.
 const CATEGORY_TO_ALIAS: Record<ContactCategory, string> = {
-  general: "hello@nothingweird.agency",
-  dsar: "support@nothingweird.agency",
-  legal: "support@nothingweird.agency",
+  general: "support@nothingweird.agency",
+  billing: "billing@nothingweird.agency",
+  dsar: "privacy@nothingweird.agency",
+  legal: "legal@nothingweird.agency",
 }
 
 function escapeHtml(value: string): string {
