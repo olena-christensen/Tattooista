@@ -29,26 +29,30 @@ Source: nothing-weird-transfer-notes.md (sec 3, 4, 5) + locked working-session c
 
 ---
 
-## Tomorrow — Termly day
+## Termly
 
-The Paddle account is live and identity-verified. Domain verification is the last gate before going live with checkout, and it needs the four legal URLs to resolve to real content. So tomorrow is the legal-and-pricing-pages sprint.
+Paddle account is live and identity-verified. Domain verification needs the four legal URLs (/pricing, /terms, /privacy, /refund) to resolve to real content before checkout can go live.
 
-- [x] Terms and Conditions generated + shipped at /terms (done 7 Jun)
-- [x] Generate the privacy policy + self-hosted at /privacy (done 7 Jun)
-- [x] GPC wired end-to-end: Sec-GPC header → GpcProvider → resolveEffectiveConsent hard-override (done 7 Jun)
-- [x] Cookie policy generated + live at /cookie-policy (done; may need revisiting)
-- [x] Refund policy generated in Termly (done 7 Jun) — needs shipping-language cleanup before /refund ships (see revisit list); NOT in global footer, link from pricing/checkout + terms only
-- [ ] Generate the DPA template (downloadable PDF studios can sign — separate document, not a page)
-- [ ] Create the four routes in `src/app/(public)/`:
-  - `/pricing`
-  - `/terms`
-  - `/privacy`
-  - `/refund`
-- [ ] Add footer links across the `(public)` and `[slug]/(public)` layouts so all routes link to all four
-- [ ] Decide pricing tiers and put real numbers on `/pricing` (FREE vs PRO feature split + amounts)
-- [ ] Once all four URLs resolve, go back to Paddle and resubmit domain verification
+Done:
+- [x] Terms and Conditions — generated + shipped at /terms (7 Jun)
+- [x] Privacy policy — generated + shipped at /privacy (7 Jun)
+- [x] Cookie policy — generated + shipped at /cookie-policy (7 Jun; may need revisiting)
+- [x] GPC (Global Privacy Control) wired end-to-end: Sec-GPC header to GpcProvider to resolveEffectiveConsent hard-override (7 Jun)
+- [x] Refund policy — generated in Termly (7 Jun). Needs shipping-language cleanup before /refund ships (see revisit list). NOT in global footer — link from pricing/checkout + terms only.
+- [x] Contact form — shipped at /contact (7 Jun)
 
----
+Still to do:
+- [ ] Data Processing Agreement (DPA) — the contract the platform signs with each studio because their clients' personal data lives in our database (GDPR requires it). Termly CANNOT generate this — it's a separate document to draft. Downloadable PDF studios sign, not a web page.
+- [ ] Build /refund route (paste cleaned refund text)
+- [ ] Build /pricing route with real FREE vs PRO numbers
+- [ ] Decide pricing tiers + amounts (FREE vs PRO feature split, monthly + annual)
+- [ ] Add footer links so the legal routes are reachable (refund NOT in global footer)
+- [ ] Once /pricing, /terms, /privacy, /refund all resolve, resubmit Paddle domain verification
+
+Finishing Termly (the tool is temporary — cancel after):
+- [ ] Export all 4 generated docs from Termly (own the text, drop dependency on Termly's hosted version)
+- [ ] Confirm all 4 are self-hosted at their routes
+- [ ] Cancel Termly subscription
 
 ## Already built — don't redo
 
@@ -98,7 +102,7 @@ You handle studios' clients' data — that makes Tattooista a processor under GD
 - [ ] Per-studio data export endpoint — JSON dump of everything scoped to the studio's `studioId`
 - [ ] Full studio deletion flow — schema already cascades on `onDelete: Cascade`, so this is mostly a confirmation UI + endpoint
 - [ ] User account deletion (separate from studio deletion — memberships cascade)
-- [ ] Contact form: `/contact` → API route → nodemailer over Zoho SMTP, honeypot, subject tagged `[tattooista:category]` so it routes to the right alias (DSAR → `privacy@`, IP → `legal@`, general → `support@`)
+- [x] Contact form shipped at /contact → API route → nodemailer over Zoho SMTP, honeypot, subject tagged [tattooista:category], routed by alias (done 7 Jun)
 - [ ] DPA acceptance: checkbox at studio onboarding, store the timestamp + DPA version against the studio
 
 ---
