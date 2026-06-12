@@ -55,6 +55,10 @@ model Studio {
   instagram            String?
   facebook             String?
 
+  // Data Processing Agreement acceptance (set server-side at studio creation)
+  dpaAcceptedAt        DateTime?
+  dpaVersion           String?
+
   memberships StudioMembership[]
   clients     Client[]
   contacts    Contact[]

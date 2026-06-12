@@ -60,6 +60,9 @@ export const createStudioSchema = z
       .min(6, "Password must be at least 6 characters")
       .max(100, "Password is too long"),
     confirmPassword: z.string(),
+    dpaAccepted: z.boolean().refine((v) => v === true, {
+      message: "You must accept the Data Processing Agreement",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Form,
   FormControl,
@@ -19,6 +20,7 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle } from "lucide-react"
 import { generateSlug } from "@/lib/slug"
+import { DPA_PDF_PATH } from "@/lib/constants"
 
 export function CreateStudioForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -27,7 +29,7 @@ export function CreateStudioForm() {
 
   const form = useForm<CreateStudioInput>({
     resolver: zodResolver(createStudioSchema),
-    defaultValues: { studioName: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { studioName: "", email: "", password: "", confirmPassword: "", dpaAccepted: false },
   })
 
   const studioName = form.watch("studioName")
@@ -42,6 +44,7 @@ export function CreateStudioForm() {
       formData.append("email", data.email)
       formData.append("password", data.password)
       formData.append("confirmPassword", data.confirmPassword)
+      formData.append("dpaAccepted", data.dpaAccepted ? "true" : "false")
       const result = await createStudio(formData)
       if (result.error) {
         setServerError(result.error)
@@ -131,6 +134,34 @@ export function CreateStudioForm() {
                 <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="dpaAccepted"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel className="font-normal">
+                  I have read and agree to the{" "}
+                  <a
+                    href={DPA_PDF_PATH}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-4 hover:text-foreground"
+                  >
+                    Data Processing Agreement
+                  </a>
+                </FormLabel>
+                <FormMessage />
+              </div>
             </FormItem>
           )}
         />

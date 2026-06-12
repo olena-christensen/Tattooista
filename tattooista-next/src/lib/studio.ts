@@ -8,6 +8,9 @@ interface StudioCreationInput {
   name: string
   slug: string
   logo?: string
+  // DPA acceptance — computed server-side by the caller, never client-supplied
+  dpaAcceptedAt?: Date
+  dpaVersion?: string
 }
 
 type StudioValidation =
@@ -177,6 +180,8 @@ export async function createStudioWithDefaults(
       phone: "+1234567890",
       instagram: "#",
       facebook: "#",
+      dpaAcceptedAt: input.dpaAcceptedAt ?? null,
+      dpaVersion: input.dpaVersion ?? null,
     },
   })
 

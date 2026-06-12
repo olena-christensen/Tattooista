@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { registerSchema, loginSchema, resetPasswordSchema, newPasswordSchema, createStudioSchema } from "@/lib/validations/auth"
 import { createStudioWithDefaults } from "@/lib/studio"
+import { DPA_VERSION } from "@/lib/constants"
 import { generateSlug, validateSlug } from "@/lib/slug"
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email"
 import { revalidatePath } from "next/cache"
@@ -274,8 +275,10 @@ export async function createStudio(formData: FormData) {
     email: formData.get("email"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
+    dpaAccepted: formData.get("dpaAccepted") === "true",
   }
 
+  // Re-validates DPA acceptance server-side (schema requires dpaAccepted === true)
   const validationResult = createStudioSchema.safeParse(rawData)
   if (!validationResult.success) {
     return { error: validationResult.error.issues[0].message }
@@ -323,8 +326,13 @@ export async function createStudio(formData: FormData) {
         },
       })
 
-      // Create studio with defaults (Studio + Membership + pages + default style)
-      await createStudioWithDefaults(user.id, { name: studioName, slug }, tx)
+      // Create studio with defaults (Studio + Membership + pages + default style).
+      // DPA acceptance is stamped server-side here — never trusted from the client.
+      await createStudioWithDefaults(
+        user.id,
+        { name: studioName, slug, dpaAcceptedAt: new Date(), dpaVersion: DPA_VERSION },
+        tx
+      )
 
       // Create verification token
       const token = crypto.randomBytes(32).toString("hex")

@@ -25,7 +25,7 @@ Source: nothing-weird-transfer-notes.md (sec 3, 4, 5) + locked working-session c
 **Revisit list (safe placeholder taken, real decision pending):**
 - Free trial: terms say Yes/14-day/suspend-don't-charge, but trial-vs-freemium product decision still open.
 - Legal-name string consistency: use ONE spelling of the FOP legal name ("Olena Christensen, Individual Entrepreneur (FOP)") across ALL docs — privacy, terms, cookie, DPA — AND across both Nothing Weird projects (Tattooista + The Veil). No official Diia English version exists, so the chosen transliteration is the source of truth. Audit + align on self-host.
-- Refund doc shipping-language cleanup: Termly Return Policy generator emits physical-retail wording ("return package", "postmarked", "return shipping", "Company pays"). None applies to a digital subscription. Before hosting /refund, strip/reword all shipping/postmark/package language so it reads as "request a refund within 14 days" etc. Refund window = 14 days, processing = 14 days.
+- DPA transfer clause: lawyer glance on the SCC / Ukraine-establishment transfer wording (Clause 6). Optional pre-launch, do before scaling.
 
 ---
 
@@ -42,16 +42,15 @@ Done:
 - [x] Contact form — shipped at /contact (7 Jun)
 
 Still to do:
-- [ ] Data Processing Agreement (DPA) — the contract the platform signs with each studio because their clients' personal data lives in our database (GDPR requires it). Termly CANNOT generate this — it's a separate document to draft. Downloadable PDF studios sign, not a web page.
-- [ ] Build /refund route (paste cleaned refund text)
-- [ ] Build /pricing route with real FREE vs PRO numbers
-- [ ] Decide pricing tiers + amounts (FREE vs PRO feature split, monthly + annual)
-- [ ] Add footer links so the legal routes are reachable (refund NOT in global footer)
+- [x] Data Processing Agreement (DPA) v1.0 DRAFTED as Word doc (Art 28 + annexes from real schema, 8 Jun). Date (12 Jun) + Vercel Blob region (US East) filled. Remaining: place PDF at public/legal/, wire onboarding acceptance checkbox.
+- [x] /refund route built + live, text cleaned for digital subscription — no shipping/postmark language (verified 8 Jun)
+- [x] Pricing live on landing page: price tiles in platform-landing.tsx, header link to /#pricing, anchor id=pricing all exist. No legal doc references a /pricing URL (audited)
+- [x] Footer FINAL: Privacy, Terms, Cookie Policy, Cookie Preferences, Contact. Refund + Pricing intentionally NOT in footer. Pricing is on the landing page (anchor /#pricing if linked).
 - [ ] Once /pricing, /terms, /privacy, /refund all resolve, resubmit Paddle domain verification
 
 Finishing Termly (the tool is temporary — cancel after):
-- [ ] Export all 4 generated docs from Termly (own the text, drop dependency on Termly's hosted version)
-- [ ] Confirm all 4 are self-hosted at their routes
+- [x] Docs self-hosted in repo — no Termly code references, no hidden termly.io/dsar links, Termly markup stripped (audited 8 Jun). Export effectively done.
+- [x] All 4 live at their routes (privacy, terms, cookie-policy, refund) + contact
 - [ ] Cancel Termly subscription
 
 ## Already built — don't redo
