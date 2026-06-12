@@ -39,8 +39,8 @@ model Studio {
   logo                 String?
   customDomain         String?  @unique
   plan                 Plan     @default(FREE)
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
+  paddleCustomerId     String?
+  paddleSubscriptionId String?
   isActive             Boolean  @default(true)
 
   // Hero block
