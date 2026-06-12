@@ -64,14 +64,15 @@ const optOutLinks = [
 ]
 
 const cookieDetails = [
-  { label: "Name", value: "s7" },
+  { label: "Name", value: "_ga" },
   {
     label: "Purpose",
-    value: "Gather data regarding site usage and user behavior on the website.",
+    value:
+      "Records a unique identifier used to generate statistical data on how you use the website.",
   },
   { label: "Provider", value: "tattooista.app" },
-  { label: "Type", value: "server_cookie" },
-  { label: "Expires in", value: "Session" },
+  { label: "Type", value: "http_cookie" },
+  { label: "Expires in", value: "2 years" },
 ]
 
 export default function CookiePolicyPage() {
@@ -90,7 +91,7 @@ export default function CookiePolicyPage() {
           Cookie Policy
         </h1>
         <p className="text-[13px] tracking-[1.5px] uppercase text-muted-foreground mt-4">
-          Last updated May 30, 2026
+          Last updated June 07, 2026
         </p>
 
         <div className="mt-12">
@@ -187,9 +188,9 @@ export default function CookiePolicyPage() {
                   Service
                 </dt>
                 <dd className="text-[14px] text-[#c7c7c7] break-words">
-                  Adobe Analytics{" "}
+                  Google Analytics{" "}
                   <a
-                    href="https://www.adobe.com/uk/privacy/policy.html"
+                    href="https://policies.google.com/privacy"
                     target="_blank"
                     rel="noopener noreferrer"
                     className={linkClass}
@@ -334,19 +335,19 @@ export default function CookiePolicyPage() {
           <p className={bodyClass}>
             If you have any questions about our use of cookies or other technologies,
             please email us at{" "}
-            <a href="mailto:founder@nothingweird.agency" className={linkClass}>
-              founder@nothingweird.agency
+            <a href="mailto:privacy@nothingweird.agency" className={linkClass}>
+              privacy@nothingweird.agency
             </a>{" "}
             or by post to:
           </p>
           <address className="not-italic text-[15px] leading-[1.8] text-[#c7c7c7]">
             {COMPANY}
             <br />
-            Mykolaiv, Mykolaiv 54028
+            ave. Voskresenskyi, build 24, housing A, fl. 14
+            <br />
+            Kyiv, Kyiv 02125
             <br />
             Ukraine
-            <br />
-            Phone: (+380)776591244
           </address>
         </div>
       </Container>

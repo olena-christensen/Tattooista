@@ -10,8 +10,8 @@ export interface Studio {
   logo: string | null
   customDomain: string | null
   plan: Plan
-  stripeCustomerId: string | null
-  stripeSubscriptionId: string | null
+  paddleCustomerId: string | null
+  paddleSubscriptionId: string | null
   isActive: boolean
   createdAt: Date
   updatedAt: Date
