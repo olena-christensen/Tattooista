@@ -10,7 +10,7 @@ import { DPA_VERSION } from "@/lib/constants"
 import { generateSlug, validateSlug } from "@/lib/slug"
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email"
 import { revalidatePath } from "next/cache"
-import { AuthError } from "next-auth"
+import { AuthError, CredentialsSignin } from "next-auth"
 
 export async function register(formData: FormData) {
   const rawData = {
@@ -105,8 +105,12 @@ export async function login(formData: FormData) {
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
+          if ((error as CredentialsSignin).code === "email_not_verified") {
+            return { error: "Please verify your email before logging in. Check your inbox, or request a new verification email." }
+          }
           return { error: "Invalid email or password" }
         default:
+          console.error("login failed:", error)
           return { error: "An error occurred during login" }
       }
     }

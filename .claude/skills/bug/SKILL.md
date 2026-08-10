@@ -38,12 +38,18 @@ Create a TodoWrite item per phase and work them in order.
       wait for approval → then act. Never touch external accounts (Vercel, GitHub,
       npm, DB) — explain what the user must do instead.
 
-- [ ] **2. Reproduce first; identify the environment.** Is the bug on **local**
-      (Docker Postgres) or **Vercel** (Neon prod)? Reproduce before theorizing.
-      - Local Prisma `P1001: Can't reach database server` → Docker DB is down →
-        `docker start tattooista-postgres`.
-      - Local Postgres is NOT prod Neon. Confirm the data assumption holds in the
-        environment where the bug actually occurs.
+- [ ] **2. Reproduce first; identify the environment.** Is the bug on **local dev**
+      (Neon dev branch) or **Vercel** (Neon prod)? Reproduce before theorizing.
+      - There is no Docker/local Postgres any more. Local dev runs against a Neon
+        branch copied from prod — see CLAUDE.md → "The dev database is a Neon branch".
+      - Prisma `P1001: Can't reach database server` is a network/credential problem,
+        NOT a stopped container: check `DATABASE_URL` in `tattooista-next/.env`, that
+        the Neon branch still exists, and connectivity. Never "fix" it by starting Docker.
+      - The dev branch holds **real prod rows**. Reproducing a bug must not mean
+        mutating or deleting customer data — read first, and get the user's explicit
+        say-so before any write.
+      - The dev branch is a *point-in-time copy*: prod may have moved on since it was
+        cut. Confirm the data assumption holds in the environment where the bug occurs.
 
 - [ ] **3. Read the issue, scope tasks, then create bug.md.** If an issue
       number/URL was given, read it (`gh issue view <#>`) — repro/expected/actual
