@@ -127,7 +127,7 @@ export default function TermsPage() {
           Terms and Conditions
         </h1>
         <p className="text-[13px] tracking-[1.5px] uppercase text-muted-foreground mt-4">
-          Last updated June 07, 2026
+          Last updated August 09, 2026
         </p>
 
         <div className="mt-12">
@@ -434,20 +434,13 @@ export default function TermsPage() {
             payments shall be in Euros.
           </p>
           <p className={bodyClass}>
-            You agree to pay all charges at the prices then in effect for your purchases and
-            any applicable shipping fees, and you authorize us to charge your chosen payment
-            provider for any such amounts upon placing your order. We reserve the right to
-            correct any errors or mistakes in pricing, even if we have already requested or
-            received payment.
+            You agree to pay all charges at the prices then in effect for your subscription,
+            and you authorize us to charge your chosen payment provider for any such amounts
+            upon placing your order. We reserve the right to correct any errors or mistakes
+            in pricing, even if we have already requested or received payment.
           </p>
           <p className={bodyClass}>
-            We reserve the right to refuse any order placed through the Services. We may, in
-            our sole discretion, limit or cancel quantities purchased per person, per
-            household, or per order. These restrictions may include orders placed by or
-            under the same customer account, the same payment method, and/or orders that use
-            the same billing or shipping address. We reserve the right to limit or prohibit
-            orders that, in our sole judgment, appear to be placed by dealers, resellers, or
-            distributors.
+            We reserve the right to refuse any order placed through the Services.
           </p>
 
           <h2 id="subscriptions" className={headingClass}>

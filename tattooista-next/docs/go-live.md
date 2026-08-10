@@ -1,149 +1,109 @@
-# Tattooista — Go-Live Plan
+# Tattooista — go-live task list
 
-Living to-do list for getting Tattooista from current state to production launch.
-Grounded in what's actually in the repo as of 28 May 2026 — not a fresh roadmap.
+Decisions and standing rules: `legal-decisions.md`. Umbrella traps: `~/.claude/skills/task-doc/references/findings.md`.
 
-Tomorrow's focus is at the top. The rest is the wider picture, organised by track so it can be picked up in any order once Termly day is done.
+## Blocking — before taking a real payment
 
----
+- [ ] 💻 When saving a subscription status, refuse to replace a final status with an earlier one that arrives late.
+- [ ] 💻 Add a daily check that asks Paddle about payments stuck in pending and feeds the answer through the same handler.
+- [ ] 💻 When a checkout is abandoned, mark that payment closed so the daily check stops asking about it.
+- [ ] 💻 Ask for the studio's value-added-tax number during onboarding and store it in Paddle as the business record's tax_identifier.
+- [ ] 💻 Record every upload's file size in the database so a studio's storage total can be counted.
+- [ ] 💻 Enforce the free-plan limits at creation time: the 51st client card, the 2nd staff seat, the upload passing 500 megabytes.
+- [ ] 💻 Show usage counters for clients and gallery in the admin, so the limit never arrives as a surprise.
+- [ ] 💻 Never limit incoming bookings and never lock existing data on any plan.
+- [ ] 💻 Run the whole purchase flow against Paddle's test environment until it passes.
+- [ ] 💻 Complete one real purchase on the live site with a real card, after the test-environment run passes.
+- [ ] 📋 Check that Paddle sent the buyer an invoice for that real purchase.
+- [ ] 📋 Confirm which currency Paddle pays out in and which account receives it.
+- [ ] 📋 Ask the accountant whether money paid out by Paddle needs Ukrainian fiscal receipts.
+- [ ] 📋 Check the legal name is spelled identically in every legal page of both Nothing Weird products.
+- [ ] 📋 Read all four legal pages end to end for clauses that contradict each other or the product.
+- [ ] 📋 Submit tattooista.app for Paddle website approval; only the old tattooista-next.vercel.app is approved.
+- [ ] 📋 Cancel the Termly subscription.
 
-## Answering legal-doc / Termly questions — standing rules
+## Blocking — before letting a stranger sign up
 
-The decisions we always apply, so they're not reconstructed each screen.
-Source: nothing-weird-transfer-notes.md (sec 3, 4, 5) + locked working-session calls.
+- [ ] 💻 Limit failed sign-in and registration attempts, counted both per account and per network address.
+- [ ] 💻 Accept only real image files in the upload route and cap each file at 10 megabytes.
+- [ ] 💻 Add an error page to the sign-in area and a root-level error page for the whole app.
+- [ ] 💻 Add a health-check route that runs a real database query, so it fails when the database is down.
+- [ ] 📋 Point an external uptime monitor at that route, at an interval slow enough not to keep the database permanently awake.
+- [ ] 💻 Build the per-studio data export: one download of everything belonging to the studio.
+- [ ] 💻 Build user account deletion, separate from studio deletion.
+- [ ] 💻 Check that deleting an account also signs it out everywhere.
+- [ ] 💻 Test whether a studio owner can invite staff by email end to end; build it if not.
+- [ ] 💻 Verify the verification, password-reset and invitation mail templates all exist and send.
+- [ ] 💻 Build the notice for changed terms: an email to all users, a notice in the app, a new last-updated date on the page.
 
-1. Default **YES** to any capability the platform will plausibly build; **NO** only for genuinely harmful or irrelevant items (e.g. CSAM, physical-goods shipping). Keep privacy / terms / cookie / DPA answers consistent.
-2. **B2B, not B2C** — docs are a SaaS subscription/service agreement. The "user" is the studio (internal business use), not the studio's walk-in clients.
-3. Tattooista is a data **processor**; studios are controllers. DPA required (separate signable doc).
-4. Payment = **Option A only**: subscription fee charged to studios. NOT a payment facilitator / marketplace for studios' own client payments.
-5. **Paddle = Merchant of Record** — handles EU VAT. Still collect studio VAT numbers for B2B reverse-charge (VIES validation).
-6. Hosting disclosure: app layer = **United States** (Vercel); database = **EU / Germany** (Neon).
-7. Base currency = **EUR**.
-8. Drop all tarot-era items: **no** 18+ age gate, **no** entertainment-only disclaimers, **no** divination category restrictions.
-9. A completed screen is final — do not re-open settled answers. BUT if the real decision is not ready, take the safe placeholder option to keep moving AND log it to the revisit list below.
+## Blocking — before announcing
 
-**Revisit list (safe placeholder taken, real decision pending):**
-- Free trial: terms say Yes/14-day/suspend-don't-charge, but trial-vs-freemium product decision still open.
-- Legal-name string consistency: use ONE spelling of the FOP legal name ("Olena Christensen, Individual Entrepreneur (FOP)") across ALL docs — privacy, terms, cookie, DPA — AND across both Nothing Weird projects (Tattooista + The Veil). No official Diia English version exists, so the chosen transliteration is the source of truth. Audit + align on self-host.
-- DPA transfer clause: lawyer glance on the SCC / Ukraine-establishment transfer wording (Clause 6). Optional pre-launch, do before scaling.
+- [ ] 💻 Bring every screen up to what the original app had; track the individual bugs on the GitHub board.
+- [ ] 💻 Check the gallery and wallpaper images are all back; re-upload any missing ones from Server/uploads.
+- [ ] 💻 Add robots.txt, sitemap.xml, and the metadata that makes studio pages preview nicely when shared.
+- [ ] 💻 Check the whole site on a 360-pixel-wide phone screen.
+- [ ] 📋 Confirm every advertised feature exists or is marked coming soon.
+- [ ] 📋 Set up the mail records that keep tattooista.app mail out of spam, or send from a subdomain of the existing Zoho mailbox.
+- [ ] 💻 Wire error monitoring so production crashes reach you (Sentry or similar).
+- [ ] 📋 Set up automated backups for the Postgres database.
+- [ ] 📋 Run the smoke test with two real studios: sign up, onboard, upgrade, use, cancel, delete.
+- [ ] 📣 Send the site to one real stranger and watch where they get stuck.
 
----
+## Must-have once triggered
 
-## Termly
+- [ ] 💻 Move mass email to a dedicated bulk-mail service before all Nothing Weird products together near Zoho's 50-messages-per-hour limit.
+- [ ] 💻 Add the four job guards the day the first scheduled job ships: alert on failure, alert on crash, a hard time limit, process every page of work.
+- [ ] 💻 Build a switcher for users who belong to more than one studio, the day the first such user exists.
+- [ ] 📋 Complete Google Ads advertiser verification before the first paid campaign runs.
+- [ ] 💻 Build the ad block on free studio sites and wire it to an ad network (Google or similar), the day ads go live.
+- [ ] 📋 Read the ad network's prohibited and restricted lists before assuming tattoo content is eligible, before ads go live.
+- [ ] 💻 Verify site ownership for the ad network with a text file, not an ad script.
+- [ ] 💻 Hide ads from every PRO studio before the first ad renders; the terms promise PRO removes advertising.
+- [ ] 💻 Make ad scripts obey the consent banner and load nothing before consent, the day ads go live.
 
-Paddle account is live and identity-verified. Domain verification needs the four legal URLs (/pricing, /terms, /privacy, /refund) to resolve to real content before checkout can go live.
+## Growth — the day it ships
 
-Done:
-- [x] Terms and Conditions — generated + shipped at /terms (7 Jun)
-- [x] Privacy policy — generated + shipped at /privacy (7 Jun)
-- [x] Cookie policy — generated + shipped at /cookie-policy (7 Jun; may need revisiting)
-- [x] GPC (Global Privacy Control) wired end-to-end: Sec-GPC header to GpcProvider to resolveEffectiveConsent hard-override (7 Jun)
-- [x] Refund policy — generated in Termly (7 Jun). Needs shipping-language cleanup before /refund ships (see revisit list). NOT in global footer — link from pricing/checkout + terms only.
-- [x] Contact form — shipped at /contact (7 Jun)
+- [ ] 📣 Pick the single marketing channel you will actually work, and ignore the rest.
+- [ ] 📣 Add share links for Instagram, Facebook, TikTok and Pinterest to studio public profiles.
+- [ ] 📣 Measure how many people arrive, sign up, and pay — three numbers, not a dashboard.
 
-Still to do:
-- [x] Data Processing Agreement (DPA) v1.0 DRAFTED as Word doc (Art 28 + annexes from real schema, 8 Jun). Date (12 Jun) + Vercel Blob region (US East) filled. Remaining: place PDF at public/legal/, wire onboarding acceptance checkbox.
-- [x] /refund route built + live, text cleaned for digital subscription — no shipping/postmark language (verified 8 Jun)
-- [x] Pricing live on landing page: price tiles in platform-landing.tsx, header link to /#pricing, anchor id=pricing all exist. No legal doc references a /pricing URL (audited)
-- [x] Footer FINAL: Privacy, Terms, Cookie Policy, Cookie Preferences, Contact. Refund + Pricing intentionally NOT in footer. Pricing is on the landing page (anchor /#pricing if linked).
-- [ ] Once /pricing, /terms, /privacy, /refund all resolve, resubmit Paddle domain verification
+## Interface fixes — when convenient
 
-Finishing Termly (the tool is temporary — cancel after):
-- [x] Docs self-hosted in repo — no Termly code references, no hidden termly.io/dsar links, Termly markup stripped (audited 8 Jun). Export effectively done.
-- [x] All 4 live at their routes (privacy, terms, cookie-policy, refund) + contact
-- [ ] Cancel Termly subscription
+- [ ] 🎨 Align the buttons on the three pricing cards; they sit at uneven heights.
 
-## Already built — don't redo
+## Nice to have
 
-Confirmed from the repo. Listing these so they're not accidentally re-planned.
+- [ ] 💻 Wire Google sign-in; the privacy and terms pages already declare it.
+- [ ] 📋 Pay a lawyer to read the terms, the privacy page and the data-transfer clause of the data-processing agreement.
 
-- **Multitenancy** — `Studio` model with `slug`, `studioId` foreign keys and indexes across every business model, `tenant-prisma.ts` and `tenant.ts` helpers in `src/lib/`. Solid.
-- **Auth** — NextAuth (v5 beta) with email/password, sessions, accounts, verification tokens, password reset.
-- **Roles** — `PlatformRole` (USER / PLATFORM_ADMIN) and `StudioRole` (OWNER / STAFF) via `StudioMembership`.
-- **Per-studio admin** — bookings, clients, gallery, services, FAQ, pages, profile, settings, styles, users (under `src/app/[slug]/admin/`).
-- **Per-studio public site** — portfolio, contacts, reviews (under `src/app/[slug]/(public)/`).
-- **Plan model stub** — `Plan` enum (FREE / PRO) on `Studio`. No billing wired yet.
-- **Public landing page** — done.
+## Done
 
----
-
-## Decisions to make before billing wires in
-
-These don't need to be made tomorrow, but they block the Paddle integration work.
-
-- [ ] **Pricing tiers.** FREE vs PRO: what's the feature split, what are the amounts (monthly + annual). Needs to be real because it lands on the `/pricing` page and in Paddle's catalog.
-- [ ] **Free trial or freemium?** FREE tier with limits, or PRO trial period? Affects schema, gating logic, and how Paddle is configured.
-- [ ] **EU B2B VAT model.** Paddle handles VAT as Merchant of Record, but you still collect studio VAT numbers for reverse-charge eligibility. Confirm in Paddle docs how it wants this passed.
-
----
-
-## Billing — Paddle integration
-
-Once tiers are decided, this is the biggest single chunk of build work.
-
-- [ ] Schema migration: add `paddleCustomerId` and `paddleSubscriptionId` to `Studio` (or rename the existing Stripe-named fields)
-- [ ] Set up Paddle catalog in dashboard: FREE + PRO products with prices; copy price IDs into env
-- [ ] Build client-side token issuance endpoint
-- [ ] Initialise Paddle.js in the studio admin area
-- [ ] Checkout flow: studio admin → settings → upgrade → Paddle overlay → success/cancel
-- [ ] **URGENT** In-account cancellation flow (studio admin → settings → cancel → fires subscription.canceled) — terms promise users can cancel in-account; clause is false until this ships
-- [ ] Webhook handler at `src/app/api/paddle/webhook/route.ts` — handle `subscription.created`, `subscription.updated`, `subscription.canceled`, `subscription.past_due`
-- [ ] VAT number capture + VIES validation in studio onboarding (for EU B2B reverse-charge)
-- [ ] Plan-gated features in admin UI (some features only on PRO)
-- [ ] End-to-end test against Paddle Sandbox before switching env to production keys
-
----
-
-## GDPR / data processor obligations
-
-You handle studios' clients' data — that makes Tattooista a processor under GDPR. These are non-negotiable for B2B SaaS.
-
-- [ ] Per-studio data export endpoint — JSON dump of everything scoped to the studio's `studioId`
-- [ ] Full studio deletion flow — schema already cascades on `onDelete: Cascade`, so this is mostly a confirmation UI + endpoint
-- [ ] User account deletion (separate from studio deletion — memberships cascade)
-- [x] Contact form shipped at /contact → API route → nodemailer over Zoho SMTP, honeypot, subject tagged [tattooista:category], routed by alias (done 7 Jun)
-- [ ] DPA acceptance: checkbox at studio onboarding, store the timestamp + DPA version against the studio
-
----
-
-## Onboarding gaps to check
-
-Some of this may already exist — verify rather than assume.
-
-- [ ] Studio invitation flow — does an OWNER inviting a STAFF member by email already work (token + email)?
-- [ ] Studio creation from landing — works, verified earlier
-- [ ] Email templates: verification, password reset, invitation, payment receipts. Paddle handles most billing receipts but supplemental templates are still on us.
-- [ ] Terms-update notification mechanism — terms promise users are notified of legal-terms changes; needs email-blast template + in-app notice + updated "last modified" date
-
----
-
-## Social & accounts
-
-- [ ] Google OAuth social login (next-auth v5 Google provider) — declared in Termly privacy + terms
-- [ ] Social sharing on studio public profiles — share/links for Instagram, Facebook, TikTok, Pinterest
-
----
-
-## Launch prep
-
-- [x] Real domain live at tattooista.app (done)
-- [ ] DNS / SPF / DKIM / DMARC pattern replicated for the new domain (or point a subdomain at the existing Zoho mailbox)
-- [ ] Google Ads advertiser verification — landing must show clear pricing, refund policy, and contact (all of which Termly day delivers)
-- [ ] Full smoke test with two real studios end-to-end: signup → onboarding → upgrade → daily use → cancel → delete
-- [ ] Error monitoring wired in (Sentry or similar)
-- [ ] Backup strategy for Postgres
-- [ ] SEO basics: `robots.txt`, `sitemap.xml`, OG metadata for studio public pages
-
----
-
-## Parked
-
-- **Ukraine FOP entity setup** — parked at user's request. Doesn't block any of the above; can be revisited later.
-
----
-
-## How to use this doc
-
-- Update it as things ship. The "Already built" section grows; the work sections shrink.
-- One file. Don't split into multiple to-do lists across tools.
-- If a task here needs a decision more than a build action, surface it in the "Decisions" section first so the build work isn't blocked.
+- [x] 2026-08-09 📋 Decide the plan split: free is one owner seat, 50 client cards, 500 megabytes of images; PRO lifts all three.
+- [x] 2026-08-09 📋 Decide against a free trial; the free tier replaces it.
+- [x] 2026-08-09 💻 Confirm the shipped terms never contained the trial promise; nothing to remove.
+- [x] 2026-08-09 💻 Strip the mail-order boilerplate from the terms' purchases section and refresh the date.
+- [x] 2026-08-09 📋 Find where Paddle takes the tax number: typed at checkout, or sent as tax_identifier on the business record.
+- [x] 2026-08-09 📋 Create the sandbox Pro product with monthly and yearly prices; identifiers stored in the environment file.
+- [x] 2026-08-09 💻 Build the Paddle checkout: script loading plus monthly and yearly upgrade buttons in settings.
+- [x] 2026-08-09 💻 Build in-account cancellation; the plan downgrades only when Paddle's notification confirms it.
+- [x] 2026-08-09 💻 Build the notification handler: signature check, grant-only-on-confirmation, safe against duplicates.
+- [x] 2026-08-09 💻 Drop the separate token endpoint; the public client token in the environment replaces it.
+- [x] 2026-08-09 📋 Create the Paddle notification destination for subscription events; secret stored in the environment.
+- [x] 2026-08-09 📋 Decide the PRO prices: 14 euro monthly, 140 euro yearly — two months free.
+- [x] 2026-03-21 💻 Build email-and-password sign-in with sessions, verification and password reset.
+- [x] 2026-03-21 💻 Send all transactional mail through one shared mailer (src/lib/email.ts).
+- [x] 2026-03-22 💻 Build the multitenant base: studio scoping on every model, tenant helpers, roles.
+- [x] 2026-03-24 💻 Add error pages for the public site and the studio admin area.
+- [x] 2026-03-26 💻 Build full studio deletion with a confirm dialog and cascading data removal.
+- [x] 2026-05-28 💻 Build the per-studio admin: bookings, clients, gallery, services, pages, users.
+- [x] 2026-05-28 💻 Build each studio's public site: portfolio, contacts, reviews.
+- [x] 2026-05-28 💻 Build the platform landing page with working studio creation.
+- [x] 💻 Put the real domain live at tattooista.app.
+- [x] 📋 Open the Paddle account and pass its identity verification.
+- [x] 2026-06-07 💻 Ship the terms, privacy and cookie-policy pages, self-hosted at their routes.
+- [x] 2026-06-07 💻 Wire Global Privacy Control end to end so it hard-blocks tracking consent.
+- [x] 2026-06-07 💻 Ship the contact form with a spam trap, routed by alias over the Zoho mailbox.
+- [x] 2026-06-08 💻 Ship the refund page, cleaned of shipping language, linked from pricing and terms.
+- [x] 2026-06-08 📋 Strip every Termly reference; all legal pages are self-hosted in the repository.
+- [x] 2026-06-08 💻 Put price tiles on the landing page and finalise the footer links.
+- [x] 2026-06-12 💻 Ship the data-processing agreement: signable file, required checkbox, stored version.

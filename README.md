@@ -1,74 +1,30 @@
 # Tattooista
 
-A full-stack web application for tattoo studios — featuring artist portfolios, a booking system, and an admin panel for studio management.
+Multi-studio platform for tattoo studios. Each studio gets its own public site — portfolio, booking, reviews — and an admin area for managing bookings, clients, gallery, services and staff, on a subscription.
 
-<!-- 🔗 **Live Demo:** [tattooista.example.com](https://tattooista.example.com) -->
+## Repository layout
 
-## Tech Stack
+- `tattooista-next/` — the live application (Next.js, Prisma, Postgres). All current work happens here.
+- `Client/` and `Server/` — the original single-studio app (React, Express, MongoDB). Kept only as the reference for migration; not developed further.
+- `tattooista-next/docs/go-live.md` — the task list. Single source of truth for what is done and what comes next.
+- `tattooista-next/docs/legal-decisions.md` — settled decisions and standing rules behind the legal pages and billing setup.
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React, Redux, TypeScript, SCSS |
-| Backend | Node.js, Express |
-| Database | MongoDB |
+## Local development
 
-## Features
+- `.env` has local Docker Postgres: `postgresql://postgres:postgres@localhost:5432/tattooista`
+- `.env.local.bak` has the Neon remote database (renamed to avoid overriding the local one)
+- Run locally: `docker start tattooista-postgres && cd tattooista-next && npm run dev`
+- Demo studio: visit `http://localhost:3000?studio=demo`
+- Login: `admin@tattooista.com` / `admin123`
 
-- **Artist Profiles** — portfolio galleries showcasing each artist's work and style
-- **Booking System** — clients can request consultations and schedule appointments
-- **Admin Panel** — manage artists, bookings, gallery content, and studio settings
-- **Responsive Design** — optimized for desktop and mobile
+## Original app reference data
 
-## Getting Started
+Used when migrating screens — copy content exactly, never invent it.
 
-### Prerequisites
+- Seed data: `Client/src/data/` (FaqData.js, ServicesData.js, PagesData.js, GalleryData.js)
+- Image files: `Server/uploads/` (gallery, serviceWallpapers, pageWallpapers, styleWallpapers)
+- Database exports: `tattooista-next/scripts/data/` (MongoDB exports such as tattoostyles.json)
 
-- Node.js (v16+)
-- npm
-- MongoDB (local instance or Atlas connection string)
+## Running the original app (reference only)
 
-### Installation
-
-```bash
-git clone https://github.com/Menolas/Tattooista.git
-cd Tattooista
-```
-
-Install dependencies for both client and server:
-
-```bash
-cd Server && npm install
-cd ../Client && npm install
-```
-
-### Running the App
-
-Start the backend (from the `Server` directory):
-
-```bash
-npm run devStart
-```
-
-Start the frontend (from the `Client` directory):
-
-```bash
-npm run start
-```
-
-The client will be available at `http://localhost:3000` (or whichever port is configured).
-
-## Project Structure
-
-```
-Tattooista/
-├── Client/          # React frontend (Redux, TypeScript, SCSS)
-├── Server/          # Express API server
-├── package.json
-└── README.md
-```
-
-## Screenshots
-
-<!-- Add screenshots of the app here -->
-<!-- ![Home Page](./screenshots/home.png) -->
-<!-- ![Admin Panel](./screenshots/admin.png) -->
+Backend from `Server/`: `npm run devStart`. Frontend from `Client/`: `npm run start`.
