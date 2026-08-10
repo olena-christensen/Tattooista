@@ -231,18 +231,18 @@ export function PlatformLanding() {
             </p>
           </div>
 
-          <div className="landing-reveal grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[800px] mx-auto">
+          <div className="landing-reveal grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1100px] mx-auto">
             {/* Free */}
-            <div className="border border-border p-12 transition-colors hover:border-foreground/25">
+            <div className="border border-border p-8 transition-colors hover:border-foreground/25">
               <h3 className="text-[12px] tracking-[2px] uppercase text-muted-foreground mb-5">Free</h3>
               <div className="font-display text-[52px] font-normal mb-2">
-                $0 <span className="text-lg text-muted-foreground">/ month</span>
+                €0 <span className="text-lg text-muted-foreground">/ month</span>
               </div>
               <p className="text-sm text-muted-foreground leading-[1.6] mb-8">
                 Everything you need to get started.
               </p>
               <ul className="flex flex-col gap-3 mb-10 border-t border-border pt-7">
-                {["Studio website with your branding", "Portfolio gallery", "Online booking form", "Up to 50 bookings/month", "Email notifications"].map((f) => (
+                {["Studio website with your branding", "Portfolio gallery", "Unlimited booking requests", "Up to 50 clients", "500 MB photo storage", "Email notifications"].map((f) => (
                   <li key={f} className="text-sm text-[#c7c7c7] pl-6 relative before:content-['—'] before:absolute before:left-0 before:text-muted-foreground">
                     {f}
                   </li>
@@ -257,20 +257,45 @@ export function PlatformLanding() {
               </button>
             </div>
 
-            {/* Pro */}
-            <div className="border border-foreground p-12 relative transition-colors">
-              <span className="absolute top-[-1px] left-9 px-3.5 py-1 bg-foreground text-background text-[10px] font-bold tracking-[2px]">
-                RECOMMENDED
-              </span>
-              <h3 className="text-[12px] tracking-[2px] uppercase text-muted-foreground mb-5">Pro</h3>
+            {/* Pro — monthly */}
+            <div className="border border-border p-8 transition-colors hover:border-foreground/25">
+              <h3 className="text-[12px] tracking-[2px] uppercase text-muted-foreground mb-5">Pro — Monthly</h3>
               <div className="font-display text-[52px] font-normal mb-2">
-                $29 <span className="text-lg text-muted-foreground">/ month</span>
+                €14 <span className="text-lg text-muted-foreground">/ month</span>
               </div>
               <p className="text-sm text-muted-foreground leading-[1.6] mb-8">
                 For studios ready to grow.
               </p>
               <ul className="flex flex-col gap-3 mb-10 border-t border-border pt-7">
-                {["Everything in Free", "Custom domain", "Unlimited bookings", "Client management & history", "Analytics dashboard", "Priority support"].map((f) => (
+                {["Everything in Free", "Unlimited clients", "Unlimited photo storage", "Up to 5 team accounts"].map((f) => (
+                  <li key={f} className="text-sm text-[#c7c7c7] pl-6 relative before:content-['—'] before:absolute before:left-0 before:text-muted-foreground">
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={openRegister}
+                className="w-full inline-flex items-center justify-center h-[60px] border-2 border-foreground/25 text-[#c7c7c7] text-sm font-semibold tracking-[2px] uppercase transition-all duration-300 hover:border-foreground hover:text-foreground"
+              >
+                Go Pro
+              </button>
+            </div>
+
+            {/* Pro — yearly */}
+            <div className="border border-foreground p-8 relative transition-colors">
+              <span className="absolute top-[-1px] left-9 px-3.5 py-1 bg-foreground text-background text-[10px] font-bold tracking-[2px]">
+                TWO MONTHS FREE
+              </span>
+              <h3 className="text-[12px] tracking-[2px] uppercase text-muted-foreground mb-5">Pro — Yearly</h3>
+              <div className="font-display text-[52px] font-normal mb-2">
+                €140 <span className="text-lg text-muted-foreground">/ year</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-[1.6] mb-8">
+                Same Pro — pay for ten months, get twelve.
+              </p>
+              <ul className="flex flex-col gap-3 mb-10 border-t border-border pt-7">
+                {["Everything in Free", "Unlimited clients", "Unlimited photo storage", "Up to 5 team accounts"].map((f) => (
                   <li key={f} className="text-sm text-[#c7c7c7] pl-6 relative before:content-['—'] before:absolute before:left-0 before:text-muted-foreground">
                     {f}
                   </li>
@@ -281,7 +306,7 @@ export function PlatformLanding() {
                 onClick={openRegister}
                 className="w-full inline-flex items-center justify-center h-[60px] bg-foreground text-background text-sm font-semibold tracking-[2px] uppercase border-2 border-foreground transition-all duration-300 hover:bg-transparent hover:text-foreground"
               >
-                Start Free Trial
+                Go Pro Yearly
               </button>
             </div>
           </div>

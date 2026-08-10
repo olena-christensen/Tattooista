@@ -27,42 +27,55 @@ export async function register(formData: FormData) {
 
   const { email, password, displayName } = validationResult.data
 
-  // Check if user already exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-  })
+  let token: string
+  try {
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    })
 
-  if (existingUser) {
-    return { error: "A user with this email already exists" }
+    if (existingUser) {
+      return { error: "A user with this email already exists" }
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12)
+
+    // Create user
+    await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        displayName,
+        isActivated: false,
+      },
+    })
+
+    // Create verification token
+    token = crypto.randomBytes(32).toString("hex")
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token,
+        expires,
+      },
+    })
+  } catch (err) {
+    console.error("register failed:", err)
+    return { error: "Something went wrong. Please try again." }
   }
 
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 12)
-
-  // Create user
-  await prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
-      displayName,
-      isActivated: false,
-    },
-  })
-
-  // Create verification token
-  const token = crypto.randomBytes(32).toString("hex")
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
-  await prisma.verificationToken.create({
-    data: {
-      identifier: email,
-      token,
-      expires,
-    },
-  })
-
-  // Send verification email
-  await sendVerificationEmail(email, token)
+  // Send verification email. The account already exists at this point, so a
+  // failed send must not read as a failed registration — point them at resend.
+  const emailResult = await sendVerificationEmail(email, token)
+  if ("error" in emailResult) {
+    return {
+      success: true,
+      message: "Account created, but we couldn't send the verification email. Use \"Resend verification email\" to try again.",
+    }
+  }
 
   return { success: true, message: "Registration successful! Please check your email to verify your account." }
 }
@@ -119,34 +132,39 @@ export async function getMyStudioSlug() {
 }
 
 export async function verifyEmail(token: string) {
-  const verificationToken = await prisma.verificationToken.findUnique({
-    where: { token },
-  })
+  try {
+    const verificationToken = await prisma.verificationToken.findUnique({
+      where: { token },
+    })
 
-  if (!verificationToken) {
-    return { error: "Invalid verification token" }
-  }
+    if (!verificationToken) {
+      return { error: "Invalid verification token" }
+    }
 
-  if (verificationToken.expires < new Date()) {
+    if (verificationToken.expires < new Date()) {
+      await prisma.verificationToken.delete({
+        where: { token },
+      })
+      return { error: "Verification token has expired" }
+    }
+
+    await prisma.user.update({
+      where: { email: verificationToken.identifier },
+      data: {
+        isActivated: true,
+        emailVerified: new Date(),
+      },
+    })
+
     await prisma.verificationToken.delete({
       where: { token },
     })
-    return { error: "Verification token has expired" }
+
+    return { success: true, message: "Email verified successfully! You can now log in." }
+  } catch (err) {
+    console.error("verifyEmail failed:", err)
+    return { error: "Something went wrong. Please try again." }
   }
-
-  await prisma.user.update({
-    where: { email: verificationToken.identifier },
-    data: {
-      isActivated: true,
-      emailVerified: new Date(),
-    },
-  })
-
-  await prisma.verificationToken.delete({
-    where: { token },
-  })
-
-  return { success: true, message: "Email verified successfully! You can now log in." }
 }
 
 export async function requestPasswordReset(formData: FormData) {
@@ -161,35 +179,46 @@ export async function requestPasswordReset(formData: FormData) {
 
   const { email } = validationResult.data
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-  })
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    })
 
-  // Always return success to prevent email enumeration
-  if (!user) {
-    return { success: true, message: "If an account with that email exists, we've sent a password reset link." }
+    if (!user) {
+      return { error: "No account found with that email." }
+    }
+
+    // Delete any existing reset tokens
+    await prisma.passwordResetToken.deleteMany({
+      where: { email },
+    })
+
+    // Create new token
+    const token = crypto.randomBytes(32).toString("hex")
+    const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+    await prisma.passwordResetToken.create({
+      data: {
+        email,
+        token,
+        expires,
+      },
+    })
+
+    // sendPasswordResetEmail swallows its own errors and reports them in the
+    // return value — check it, or a failed send looks identical to a sent one.
+    const emailResult = await sendPasswordResetEmail(email, token)
+    if ("error" in emailResult) {
+      // Drop the token — it can never reach them.
+      await prisma.passwordResetToken.deleteMany({ where: { email } })
+      return { error: "We couldn't send the reset email right now. Please try again in a few minutes." }
+    }
+
+    return { success: true, message: "Password reset link sent. Please check your inbox." }
+  } catch (err) {
+    console.error("requestPasswordReset failed:", err)
+    return { error: "Something went wrong. Please try again." }
   }
-
-  // Delete any existing reset tokens
-  await prisma.passwordResetToken.deleteMany({
-    where: { email },
-  })
-
-  // Create new token
-  const token = crypto.randomBytes(32).toString("hex")
-  const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-
-  await prisma.passwordResetToken.create({
-    data: {
-      email,
-      token,
-      expires,
-    },
-  })
-
-  await sendPasswordResetEmail(email, token)
-
-  return { success: true, message: "If an account with that email exists, we've sent a password reset link." }
 }
 
 export async function resetPassword(token: string, formData: FormData) {
@@ -205,68 +234,83 @@ export async function resetPassword(token: string, formData: FormData) {
 
   const { password } = validationResult.data
 
-  const resetToken = await prisma.passwordResetToken.findUnique({
-    where: { token },
-  })
+  try {
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { token },
+    })
 
-  if (!resetToken) {
-    return { error: "Invalid reset token" }
-  }
+    if (!resetToken) {
+      return { error: "Invalid reset token" }
+    }
 
-  if (resetToken.expires < new Date()) {
+    if (resetToken.expires < new Date()) {
+      await prisma.passwordResetToken.delete({
+        where: { token },
+      })
+      return { error: "Reset token has expired" }
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12)
+
+    await prisma.user.update({
+      where: { email: resetToken.email },
+      data: { password: hashedPassword },
+    })
+
     await prisma.passwordResetToken.delete({
       where: { token },
     })
-    return { error: "Reset token has expired" }
+
+    return { success: true, message: "Password reset successfully! You can now log in with your new password." }
+  } catch (err) {
+    console.error("resetPassword failed:", err)
+    return { error: "Something went wrong. Please try again." }
   }
-
-  const hashedPassword = await bcrypt.hash(password, 12)
-
-  await prisma.user.update({
-    where: { email: resetToken.email },
-    data: { password: hashedPassword },
-  })
-
-  await prisma.passwordResetToken.delete({
-    where: { token },
-  })
-
-  return { success: true, message: "Password reset successfully! You can now log in with your new password." }
 }
 
 export async function resendVerificationEmail(email: string) {
-  const user = await prisma.user.findUnique({
-    where: { email },
-  })
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    })
 
-  if (!user) {
-    return { error: "No user found with this email" }
+    if (!user) {
+      return { error: "No user found with this email" }
+    }
+
+    if (user.isActivated) {
+      return { error: "This email is already verified" }
+    }
+
+    // Delete any existing tokens
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: email },
+    })
+
+    // Create new token
+    const token = crypto.randomBytes(32).toString("hex")
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token,
+        expires,
+      },
+    })
+
+    // This action already discloses whether the account exists, so there is no
+    // enumeration reason to hide a failed send — report it plainly.
+    const emailResult = await sendVerificationEmail(email, token)
+    if ("error" in emailResult) {
+      return { error: "We couldn't send the verification email right now. Please try again in a few minutes." }
+    }
+
+    return { success: true, message: "Verification email sent! Please check your inbox." }
+  } catch (err) {
+    console.error("resendVerificationEmail failed:", err)
+    return { error: "Something went wrong. Please try again." }
   }
-
-  if (user.isActivated) {
-    return { error: "This email is already verified" }
-  }
-
-  // Delete any existing tokens
-  await prisma.verificationToken.deleteMany({
-    where: { identifier: email },
-  })
-
-  // Create new token
-  const token = crypto.randomBytes(32).toString("hex")
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
-  await prisma.verificationToken.create({
-    data: {
-      identifier: email,
-      token,
-      expires,
-    },
-  })
-
-  await sendVerificationEmail(email, token)
-
-  return { success: true, message: "Verification email sent! Please check your inbox." }
 }
 
 export async function createStudio(formData: FormData) {
@@ -357,8 +401,16 @@ export async function createStudio(formData: FormData) {
     return { error: "Failed to create studio. Please try again." }
   }
 
-  // Send email outside transaction — failure here doesn't roll back the DB
-  await sendVerificationEmail(email, verificationToken)
+  // Send email outside transaction — failure here doesn't roll back the DB.
+  // The studio is committed, so a failed send must not read as a failed signup.
+  const emailResult = await sendVerificationEmail(email, verificationToken)
+  if ("error" in emailResult) {
+    return {
+      success: true,
+      slug,
+      message: "Studio created, but we couldn't send the verification email. Use \"Resend verification email\" to try again.",
+    }
+  }
 
   return {
     success: true,

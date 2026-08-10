@@ -75,9 +75,6 @@ export async function getStudioSettings() {
   return prisma.studio.findUnique({
     where: { slug: studioSlug },
     select: {
-      id: true,
-      plan: true,
-      paddleSubscriptionId: true,
       name: true,
       slug: true,
       logo: true,

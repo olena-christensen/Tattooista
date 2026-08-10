@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { getStudioSettings } from "@/lib/actions/studio"
 import { StudioSettingsForm } from "./studio-settings-form"
 import { DeleteStudioButton } from "./delete-studio-button"
+import { BillingCard } from "./billing-card"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export const metadata: Metadata = {
@@ -28,6 +29,13 @@ export default async function SettingsPage() {
       </div>
 
       <StudioSettingsForm studio={studio} />
+
+      <BillingCard
+        plan={studio.plan}
+        studioId={studio.id}
+        slug={studio.slug}
+        hasSubscription={Boolean(studio.paddleSubscriptionId)}
+      />
 
       <Card className="border-destructive">
         <CardHeader>
