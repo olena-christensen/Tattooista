@@ -1,4 +1,4 @@
-import NextAuth from "next-auth"
+import NextAuth, { CredentialsSignin } from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
@@ -39,6 +39,19 @@ declare module "next-auth" {
   }
 }
 
+// A plain `throw new Error(...)` inside authorize() is wrapped by @auth/core as
+// CallbackRouteError, which collapses every sign-in failure into one generic
+// message. Subclassing CredentialsSignin keeps `type === "CredentialsSignin"`
+// (it is a static, so subclasses inherit it) while carrying a distinct `code`,
+// so the caller can tell the failures apart.
+export class InvalidCredentialsError extends CredentialsSignin {
+  code = "invalid_credentials"
+}
+
+export class EmailNotVerifiedError extends CredentialsSignin {
+  code = "email_not_verified"
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,7 +65,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       authorize: async (credentials) => {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required")
+          throw new InvalidCredentialsError()
         }
 
         const user = await prisma.user.findUnique({
@@ -66,7 +79,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
 
         if (!user) {
-          throw new Error("Invalid email or password")
+          throw new InvalidCredentialsError()
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -75,11 +88,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         )
 
         if (!isPasswordValid) {
-          throw new Error("Invalid email or password")
+          throw new InvalidCredentialsError()
         }
 
         if (!user.isActivated) {
-          throw new Error("Please verify your email before logging in")
+          throw new EmailNotVerifiedError()
         }
 
         return {

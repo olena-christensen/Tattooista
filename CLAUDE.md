@@ -150,21 +150,42 @@ URL helpers in `src/lib/image-utils.ts` handle three formats:
 
 ## Starting the project
 
-1. Start PostgreSQL: `docker start tattooista-postgres`
-2. Verify DB: `cd tattooista-next && npx prisma db push` (should say "already in sync")
-3. Start dev server: `cd tattooista-next && npm run dev`
+```bash
+cd tattooista-next && npm run dev
+```
 
-The Docker container (`postgres:16-alpine`) stops on machine restart. Without it, all Prisma queries fail with `P1001: Can't reach database server`.
+That is the whole startup. There is no local database process to start.
 
-- DATABASE_URL: `postgresql://postgres:postgres@localhost:5432/tattooista`
-- Config: `tattooista-next/.env`
+## The dev database is a Neon branch
+
+Local dev runs against a **Neon branch copied from production**, not a local Postgres.
+Docker is no longer used — there is no `tattooista-postgres` container and nothing in
+the code references one.
+
+- DATABASE_URL: set in `tattooista-next/.env`, points at the Neon dev branch (host `ep-*.eu-central-1.aws.neon.tech`)
 - Schema: `tattooista-next/prisma/schema.prisma`
+- Prisma reads that one variable in both places — the app via `src/lib/prisma.ts`, the CLI via `prisma.config.ts`
+
+**It holds real production rows** (studios, users, bookings, customer emails). Treat it as
+production data:
+
+- Verify schema sync with the read-only diff, NOT `db push`:
+  `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma`
+  ("No difference detected." = in sync). `db push` writes, and against this branch it
+  writes to a copy of prod.
+- Never run destructive commands (`db push --force-reset`, `migrate reset`, bulk deletes)
+  without the user's explicit say-so.
+- To refresh it, create a new branch in the Neon console (copy-on-write, instant) and
+  update `DATABASE_URL`. Branch creation is the user's job — never touch external accounts.
 
 ## Seeding
 
 ```bash
 cd tattooista-next && npx tsx prisma/seed.ts
 ```
+
+The seed is `upsert`-based, so it does not wipe existing rows — but it does overwrite the
+demo studio's pages and styles. Against the prod-copy dev branch, be sure that's intended.
 
 ---
 

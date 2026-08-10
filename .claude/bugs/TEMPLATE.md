@@ -10,7 +10,7 @@ IN PROGRESS
 {git branch}
 
 ## Environment
-{LOCAL (Docker Postgres) | VERCEL (Neon prod) | BOTH — where the bug actually reproduces. Matters: local Postgres ≠ prod Neon.}
+{LOCAL (Neon dev branch) | VERCEL (Neon prod) | BOTH — where the bug actually reproduces. Matters: the dev branch is a point-in-time copy of prod, so prod may have since diverged.}
 
 ## Area
 {free-form tag — e.g. tenant-isolation, image-rendering, auth, admin-dashboard, portfolio, seed. Used for behavioral grouping in INDEX.md.}
