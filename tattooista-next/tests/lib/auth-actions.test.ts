@@ -8,9 +8,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 
 // vi.mock is hoisted above the module body, so the mock objects have to be
 // built inside vi.hoisted() to exist by the time the factories run.
-const { prisma, sendPasswordResetEmail, sendVerificationEmail } = vi.hoisted(() => ({
+const { prisma, auth, sendPasswordResetEmail, sendVerificationEmail } = vi.hoisted(() => ({
+  auth: vi.fn(),
   prisma: {
     user: { findUnique: vi.fn(), update: vi.fn() },
+    studioMembership: { findFirst: vi.fn() },
     passwordResetToken: {
       findUnique: vi.fn(),
       deleteMany: vi.fn(),
@@ -29,7 +31,7 @@ const { prisma, sendPasswordResetEmail, sendVerificationEmail } = vi.hoisted(() 
 }))
 
 vi.mock("@/lib/prisma", () => ({ prisma }))
-vi.mock("@/lib/auth", () => ({ signIn: vi.fn(), signOut: vi.fn(), auth: vi.fn() }))
+vi.mock("@/lib/auth", () => ({ signIn: vi.fn(), signOut: vi.fn(), auth }))
 // actions/auth.ts imports AuthError from next-auth directly; loading the real
 // package pulls in next/server, which does not resolve under the node runner.
 vi.mock("next-auth", () => ({ AuthError: class AuthError extends Error {} }))
@@ -37,6 +39,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
 vi.mock("@/lib/email", () => ({ sendPasswordResetEmail, sendVerificationEmail }))
 
 import {
+  getMyStudioSlug,
   requestPasswordReset,
   resetPassword,
   verifyEmail,
@@ -56,6 +59,32 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {})
   sendPasswordResetEmail.mockResolvedValue({ success: true })
   sendVerificationEmail.mockResolvedValue({ success: true })
+})
+
+// owner-login-form.tsx branches on this: a null slug means "signed in but nowhere to
+// go", and must surface a message rather than navigating to "/" — a reload of the page
+// the user is already on, which reads as the login having silently failed.
+describe("getMyStudioSlug", () => {
+  it("returns null when the signed-in user owns no studio", async () => {
+    auth.mockResolvedValue({ user: { id: "u1" } })
+    prisma.studioMembership.findFirst.mockResolvedValue(null)
+
+    expect(await getMyStudioSlug()).toBeNull()
+  })
+
+  it("returns the slug when the user owns a studio", async () => {
+    auth.mockResolvedValue({ user: { id: "u1" } })
+    prisma.studioMembership.findFirst.mockResolvedValue({ studio: { slug: "tatts" } })
+
+    expect(await getMyStudioSlug()).toBe("tatts")
+  })
+
+  it("returns null when there is no session at all", async () => {
+    auth.mockResolvedValue(null)
+
+    expect(await getMyStudioSlug()).toBeNull()
+    expect(prisma.studioMembership.findFirst).not.toHaveBeenCalled()
+  })
 })
 
 describe("requestPasswordReset", () => {

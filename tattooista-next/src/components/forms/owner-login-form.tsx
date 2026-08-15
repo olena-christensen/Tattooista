@@ -40,13 +40,18 @@ export function OwnerLoginForm() {
         return
       }
 
-      // Find their studio and redirect to admin
+      // Signed in — send them to their studio's admin. An account with no studio has
+      // nowhere to land: navigating to "/" reloads the page they are already on, which
+      // reads as the login having silently failed (and wipes the console/network log
+      // that would explain it). Say what happened instead.
       const slug = await getMyStudioSlug()
-      if (slug) {
-        window.location.href = `/${slug}/admin`
-      } else {
-        window.location.href = "/"
+      if (!slug) {
+        setServerError(
+          "You're signed in, but this account doesn't have a studio yet. Use \"Create one\" below to set one up."
+        )
+        return
       }
+      window.location.href = `/${slug}/admin`
     } catch {
       setServerError("Something went wrong. Please try again.")
     } finally {
