@@ -1,5 +1,14 @@
 # Signup rejects an existing account that owns no studio, so it can never create one
 
+> **SUPERSEDED 2026-08-16 — this fix was removed.** The premise was wrong: it treated an
+> account with no studio as a legitimate user needing a way in. The owner's model is that
+> **no studio = no account = cannot be logged in**, so that state must not exist at all.
+> `authorize()` now refuses any account without a studio, the orphan row was cleaned up,
+> and everything this doc describes (`createStudioForExistingUser`, the signed-in
+> create-studio form, `?create=studio`, the `studioSlug` token refresh) was deleted.
+> Kept as a record of the reasoning error, not as a description of the code.
+
+
 ## Status
 FIXED (2026-08-15) — not yet committed.
 
