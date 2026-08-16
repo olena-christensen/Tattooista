@@ -135,6 +135,56 @@ export async function getMyStudioSlug() {
   return membership?.studio.slug ?? null
 }
 
+/**
+ * Verify the email link and sign the user in, in one step.
+ *
+ * Signup asks for credentials exactly once. Clicking the link finishes the job —
+ * no second login form before or after. The token is single-use and consumed by the
+ * `email-verification` provider in @/lib/auth.
+ */
+export async function verifyEmailAndSignIn(token: string) {
+  // Resolve the destination BEFORE signing in, for two reasons: the token is consumed
+  // by the provider, and the session cookie signIn() sets is not reliably readable via
+  // auth() within the same request — so the slug must not come from the session.
+  let email: string
+  try {
+    const verificationToken = await prisma.verificationToken.findUnique({
+      where: { token },
+    })
+    if (!verificationToken) {
+      return { error: "This verification link is invalid or has expired." }
+    }
+    email = verificationToken.identifier
+  } catch (err) {
+    console.error("verifyEmailAndSignIn lookup failed:", err)
+    return { error: "Something went wrong. Please try again." }
+  }
+
+  try {
+    await signIn("email-verification", { token, redirect: false })
+  } catch (error) {
+    if (error instanceof AuthError) {
+      if ((error as CredentialsSignin).code === "invalid_verification_token") {
+        return { error: "This verification link is invalid or has expired." }
+      }
+      console.error("verifyEmailAndSignIn failed:", error)
+      return { error: "We couldn't complete verification. Please try again." }
+    }
+    throw error
+  }
+
+  const membership = await prisma.studioMembership.findFirst({
+    where: { user: { email }, role: "OWNER" },
+    include: { studio: { select: { slug: true } } },
+  })
+  if (!membership) {
+    return { error: "We couldn't complete verification. Please try again." }
+  }
+
+  revalidatePath("/")
+  return { success: true, slug: membership.studio.slug }
+}
+
 export async function verifyEmail(token: string) {
   try {
     const verificationToken = await prisma.verificationToken.findUnique({

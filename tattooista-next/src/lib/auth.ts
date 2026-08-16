@@ -56,6 +56,10 @@ export class NoStudioError extends CredentialsSignin {
   code = "no_studio"
 }
 
+export class InvalidVerificationTokenError extends CredentialsSignin {
+  code = "invalid_verification_token"
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,6 +119,62 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           avatar: user.avatar,
           platformRole: user.platformRole,
           isActivated: user.isActivated,
+          studioSlug,
+        }
+      },
+    }),
+
+    // Sign-in by email-verification link. Clicking a single-use, short-lived token
+    // sent to the address proves control of the mailbox — at least as strong as a
+    // password — so signup ends in the studio rather than at another login form.
+    // Verifying and signing in are the same step; the token is consumed here.
+    Credentials({
+      id: "email-verification",
+      name: "Email verification link",
+      credentials: { token: { label: "Token", type: "text" } },
+      authorize: async (credentials) => {
+        const token = credentials?.token as string | undefined
+        if (!token) {
+          throw new InvalidVerificationTokenError()
+        }
+
+        const verificationToken = await prisma.verificationToken.findUnique({
+          where: { token },
+        })
+
+        if (!verificationToken || verificationToken.expires < new Date()) {
+          if (verificationToken) {
+            await prisma.verificationToken.delete({ where: { token } })
+          }
+          throw new InvalidVerificationTokenError()
+        }
+
+        const user = await prisma.user.update({
+          where: { email: verificationToken.identifier },
+          data: { isActivated: true, emailVerified: new Date() },
+          include: {
+            memberships: {
+              include: { studio: { select: { slug: true } } },
+              take: 1,
+            },
+          },
+        })
+
+        // Single use: consume it whether or not the sign-in below succeeds.
+        await prisma.verificationToken.delete({ where: { token } })
+
+        const studioSlug = user.memberships[0]?.studio.slug
+        if (!studioSlug) {
+          throw new NoStudioError()
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          avatar: user.avatar,
+          platformRole: user.platformRole,
+          isActivated: true,
           studioSlug,
         }
       },
