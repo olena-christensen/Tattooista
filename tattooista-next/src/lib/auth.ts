@@ -52,6 +52,10 @@ export class EmailNotVerifiedError extends CredentialsSignin {
   code = "email_not_verified"
 }
 
+export class NoStudioError extends CredentialsSignin {
+  code = "no_studio"
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,6 +99,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new EmailNotVerifiedError()
         }
 
+        // No studio means no account. The platform only knows studio owners; a row
+        // with no membership is leftover data, not a user, and must not hold a
+        // session. Accounts are always created together with a studio, so this can
+        // only ever be reached by a stale row.
+        const studioSlug = user.memberships[0]?.studio.slug
+        if (!studioSlug) {
+          throw new NoStudioError()
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -102,7 +115,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           avatar: user.avatar,
           platformRole: user.platformRole,
           isActivated: user.isActivated,
-          studioSlug: user.memberships[0]?.studio.slug ?? null,
+          studioSlug,
         }
       },
     }),
@@ -122,11 +135,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (trigger === "update" && session) {
         token.displayName = session.displayName ?? token.displayName
         token.avatar = session.avatar ?? token.avatar
-        // studioSlug is otherwise written only at sign-in. A user who creates a
-        // studio mid-session would keep `null` here, and getSessionStudio() treats
-        // a null slug as "no studio" — locking them out of their own admin until
-        // they sign out and back in.
-        token.studioSlug = session.studioSlug ?? token.studioSlug
       }
 
       return token

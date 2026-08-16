@@ -44,13 +44,11 @@ export function OwnerLoginForm() {
       // nowhere to land: navigating to "/" reloads the page they are already on, which
       // reads as the login having silently failed (and wipes the console/network log
       // that would explain it). Say what happened instead.
+      // A session always belongs to a studio owner — authorize() refuses any account
+      // without a studio — so a missing slug here means something is genuinely wrong.
       const slug = await getMyStudioSlug()
       if (!slug) {
-        // Signed in with no studio. Reload onto the create-studio form: this page was
-        // server-rendered before the session existed, so it still thinks we're logged
-        // out and would otherwise offer the signed-out form, which rejects an email
-        // that already has an account.
-        window.location.href = "/?create=studio"
+        setServerError("Something went wrong. Please try again.")
         return
       }
       window.location.href = `/${slug}/admin`

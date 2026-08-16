@@ -8,24 +8,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 
 // vi.mock is hoisted above the module body, so the mock objects have to be
 // built inside vi.hoisted() to exist by the time the factories run.
-const {
-  prisma,
-  auth,
-  tx,
-  createStudioWithDefaults,
-  sendPasswordResetEmail,
-  sendVerificationEmail,
-} = vi.hoisted(() => {
-  const tx = {
-    studioMembership: { findFirst: vi.fn() },
-    studio: { findUnique: vi.fn() },
-  }
+const { prisma, auth, sendPasswordResetEmail, sendVerificationEmail } = vi.hoisted(() => {
   return {
-    tx,
     auth: vi.fn(),
-    createStudioWithDefaults: vi.fn(),
     prisma: {
-      $transaction: vi.fn(async (fn: (t: typeof tx) => unknown) => fn(tx)),
       user: { findUnique: vi.fn(), update: vi.fn() },
       studioMembership: { findFirst: vi.fn() },
       passwordResetToken: {
@@ -53,10 +39,8 @@ vi.mock("@/lib/auth", () => ({ signIn: vi.fn(), signOut: vi.fn(), auth }))
 vi.mock("next-auth", () => ({ AuthError: class AuthError extends Error {} }))
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
 vi.mock("@/lib/email", () => ({ sendPasswordResetEmail, sendVerificationEmail }))
-vi.mock("@/lib/studio", () => ({ createStudioWithDefaults }))
 
 import {
-  createStudioForExistingUser,
   getMyStudioSlug,
   requestPasswordReset,
   resetPassword,
@@ -79,9 +63,9 @@ beforeEach(() => {
   sendVerificationEmail.mockResolvedValue({ success: true })
 })
 
-// owner-login-form.tsx branches on this: a null slug means "signed in but nowhere to
-// go", and must surface a message rather than navigating to "/" — a reload of the page
-// the user is already on, which reads as the login having silently failed.
+// owner-login-form.tsx redirects on this after a successful sign-in. A null slug should
+// now be unreachable for a live session — authorize() refuses any account without a
+// studio — but the function is still the source of the slug, so its contract is pinned.
 describe("getMyStudioSlug", () => {
   it("returns null when the signed-in user owns no studio", async () => {
     auth.mockResolvedValue({ user: { id: "u1" } })
@@ -102,83 +86,6 @@ describe("getMyStudioSlug", () => {
 
     expect(await getMyStudioSlug()).toBeNull()
     expect(prisma.studioMembership.findFirst).not.toHaveBeenCalled()
-  })
-})
-
-// The bug: createStudio() rejected any email that already had a User row, without
-// checking whether that user owned a studio — so a studio-less account could never
-// create one. This action is the way out, and its identity MUST come from the session:
-// attaching a studio to an email typed into a public form is account takeover.
-describe("createStudioForExistingUser", () => {
-  const studioForm = () => form({ studioName: "Ink Bar", dpaAccepted: "true" })
-
-  it("refuses when nobody is signed in", async () => {
-    auth.mockResolvedValue(null)
-
-    const result = await createStudioForExistingUser(studioForm())
-
-    expect(result).toHaveProperty("error")
-    expect(createStudioWithDefaults).not.toHaveBeenCalled()
-  })
-
-  it("creates the studio for a signed-in account that owns none", async () => {
-    auth.mockResolvedValue({ user: { id: "u1" } })
-    tx.studioMembership.findFirst.mockResolvedValue(null)
-    tx.studio.findUnique.mockResolvedValue(null)
-
-    const result = await createStudioForExistingUser(studioForm())
-
-    expect(result).toMatchObject({ success: true, slug: "ink-bar" })
-    expect(createStudioWithDefaults).toHaveBeenCalledWith(
-      "u1",
-      expect.objectContaining({ name: "Ink Bar", slug: "ink-bar" }),
-      tx
-    )
-  })
-
-  it("takes the owner from the session, ignoring any email in the form", async () => {
-    auth.mockResolvedValue({ user: { id: "u1" } })
-    tx.studioMembership.findFirst.mockResolvedValue(null)
-    tx.studio.findUnique.mockResolvedValue(null)
-
-    await createStudioForExistingUser(
-      form({ studioName: "Ink Bar", dpaAccepted: "true", email: "victim@example.com" })
-    )
-
-    // "u1" — the session user — never the submitted address.
-    expect(createStudioWithDefaults).toHaveBeenCalledWith("u1", expect.anything(), tx)
-  })
-
-  it("refuses when the account already owns a studio", async () => {
-    auth.mockResolvedValue({ user: { id: "u1" } })
-    tx.studioMembership.findFirst.mockResolvedValue({ id: "m1", role: "OWNER" })
-
-    const result = await createStudioForExistingUser(studioForm())
-
-    expect(result).toHaveProperty("error")
-    expect(createStudioWithDefaults).not.toHaveBeenCalled()
-  })
-
-  it("refuses when the slug is taken", async () => {
-    auth.mockResolvedValue({ user: { id: "u1" } })
-    tx.studioMembership.findFirst.mockResolvedValue(null)
-    tx.studio.findUnique.mockResolvedValue({ id: "s9", slug: "ink-bar" })
-
-    const result = await createStudioForExistingUser(studioForm())
-
-    expect(result).toHaveProperty("error")
-    expect(createStudioWithDefaults).not.toHaveBeenCalled()
-  })
-
-  it("requires the DPA to be accepted", async () => {
-    auth.mockResolvedValue({ user: { id: "u1" } })
-
-    const result = await createStudioForExistingUser(
-      form({ studioName: "Ink Bar", dpaAccepted: "false" })
-    )
-
-    expect(result).toHaveProperty("error")
-    expect(createStudioWithDefaults).not.toHaveBeenCalled()
   })
 })
 

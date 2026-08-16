@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSession } from "next-auth/react"
 
 import { Container } from "@/components/shared/container"
 
@@ -12,6 +13,12 @@ const signInClass =
 // `onSignIn` opens the auth dialog, which only lives on the landing page. When
 // not provided (e.g. on the cookie-policy page), Sign In links home instead.
 export function PlatformHeader({ onSignIn }: { onSignIn?: () => void }) {
+  // Never offer "Sign In" to someone who is already signed in. Every session belongs
+  // to a studio owner (authorize() refuses accounts without a studio), so there is
+  // always a studio to send them to.
+  const { data: session } = useSession()
+  const studioSlug = session?.user?.studioSlug
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 py-5 bg-background/90 backdrop-blur-md border-b border-border">
       <Container className="flex items-center justify-between">
@@ -28,7 +35,11 @@ export function PlatformHeader({ onSignIn }: { onSignIn?: () => void }) {
           <Link href="/#pricing" className={navLinkClass}>
             Pricing
           </Link>
-          {onSignIn ? (
+          {studioSlug ? (
+            <Link href={`/${studioSlug}/admin`} className={signInClass}>
+              My Studio
+            </Link>
+          ) : onSignIn ? (
             <button type="button" onClick={onSignIn} className={signInClass}>
               Sign In
             </button>
