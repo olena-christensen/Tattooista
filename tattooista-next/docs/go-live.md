@@ -23,6 +23,7 @@ Decisions and standing rules: `legal-decisions.md`. Umbrella traps: `~/.claude/s
 
 ## Blocking — before letting a stranger sign up
 
+- [ ] 💻 Let one person own more than one studio; signup refuses a second studio for the same email, which contradicts the selling point.
 - [ ] 💻 Limit failed sign-in and registration attempts, counted both per account and per network address.
 - [ ] 💻 Accept only real image files in the upload route and cap each file at 10 megabytes.
 - [ ] 💻 Add an error page to the sign-in area and a root-level error page for the whole app.
@@ -78,7 +79,6 @@ Decisions and standing rules: `legal-decisions.md`. Umbrella traps: `~/.claude/s
 
 ## Done
 
-- [x] 2026-08-16 💻 When saving a subscription status, refuse to replace a final status with an earlier one that arrives late.
 - [x] 2026-08-09 📋 Decide the plan split: free is one owner seat, 50 client cards, 500 megabytes of images; PRO lifts all three.
 - [x] 2026-08-09 📋 Decide against a free trial; the free tier replaces it.
 - [x] 2026-08-09 💻 Confirm the shipped terms never contained the trial promise; nothing to remove.
@@ -90,6 +90,7 @@ Decisions and standing rules: `legal-decisions.md`. Umbrella traps: `~/.claude/s
 - [x] 2026-08-09 💻 Build the notification handler: signature check, grant-only-on-confirmation, safe against duplicates.
 - [x] 2026-08-09 💻 Drop the separate token endpoint; the public client token in the environment replaces it.
 - [x] 2026-08-09 📋 Create the Paddle notification destination for subscription events; secret stored in the environment.
+- [x] 2026-08-16 💻 Refuse out-of-order Paddle events: paddleEventAt and paddleStatus on Studio, tested.
 - [x] 2026-08-09 📋 Decide the PRO prices: 14 euro monthly, 140 euro yearly — two months free.
 - [x] 2026-03-21 💻 Build email-and-password sign-in with sessions, verification and password reset.
 - [x] 2026-03-21 💻 Send all transactional mail through one shared mailer (src/lib/email.ts).
