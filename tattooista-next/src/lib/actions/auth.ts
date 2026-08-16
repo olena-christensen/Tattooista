@@ -117,42 +117,6 @@ export async function verifyEmailAndSignIn(token: string) {
   return { success: true, slug: membership.studio.slug }
 }
 
-export async function verifyEmail(token: string) {
-  try {
-    const verificationToken = await prisma.verificationToken.findUnique({
-      where: { token },
-    })
-
-    if (!verificationToken) {
-      return { error: "Invalid verification token" }
-    }
-
-    if (verificationToken.expires < new Date()) {
-      await prisma.verificationToken.delete({
-        where: { token },
-      })
-      return { error: "Verification token has expired" }
-    }
-
-    await prisma.user.update({
-      where: { email: verificationToken.identifier },
-      data: {
-        isActivated: true,
-        emailVerified: new Date(),
-      },
-    })
-
-    await prisma.verificationToken.delete({
-      where: { token },
-    })
-
-    return { success: true, message: "Email verified successfully! You can now log in." }
-  } catch (err) {
-    console.error("verifyEmail failed:", err)
-    return { error: "Something went wrong. Please try again." }
-  }
-}
-
 export async function requestPasswordReset(formData: FormData) {
   const rawData = {
     email: formData.get("email"),
