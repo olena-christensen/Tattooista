@@ -4,81 +4,13 @@ import { prisma } from "@/lib/prisma"
 import { signIn, signOut, auth } from "@/lib/auth"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
-import { registerSchema, loginSchema, resetPasswordSchema, newPasswordSchema, createStudioSchema } from "@/lib/validations/auth"
+import { loginSchema, resetPasswordSchema, newPasswordSchema, createStudioSchema } from "@/lib/validations/auth"
 import { createStudioWithDefaults } from "@/lib/studio"
 import { DPA_VERSION } from "@/lib/constants"
 import { generateSlug, validateSlug } from "@/lib/slug"
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email"
 import { revalidatePath } from "next/cache"
 import { AuthError, CredentialsSignin } from "next-auth"
-
-export async function register(formData: FormData) {
-  const rawData = {
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
-    displayName: formData.get("displayName"),
-  }
-
-  const validationResult = registerSchema.safeParse(rawData)
-  if (!validationResult.success) {
-    return { error: validationResult.error.issues[0].message }
-  }
-
-  const { email, password, displayName } = validationResult.data
-
-  let token: string
-  try {
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
-
-    if (existingUser) {
-      return { error: "A user with this email already exists" }
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
-
-    // Create user
-    await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        displayName,
-        isActivated: false,
-      },
-    })
-
-    // Create verification token
-    token = crypto.randomBytes(32).toString("hex")
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
-    await prisma.verificationToken.create({
-      data: {
-        identifier: email,
-        token,
-        expires,
-      },
-    })
-  } catch (err) {
-    console.error("register failed:", err)
-    return { error: "Something went wrong. Please try again." }
-  }
-
-  // Send verification email. The account already exists at this point, so a
-  // failed send must not read as a failed registration — point them at resend.
-  const emailResult = await sendVerificationEmail(email, token)
-  if ("error" in emailResult) {
-    return {
-      success: true,
-      message: "Account created, but we couldn't send the verification email. Use \"Resend verification email\" to try again.",
-    }
-  }
-
-  return { success: true, message: "Registration successful! Please check your email to verify your account." }
-}
 
 export async function login(formData: FormData) {
   const rawData = {
@@ -183,42 +115,6 @@ export async function verifyEmailAndSignIn(token: string) {
 
   revalidatePath("/")
   return { success: true, slug: membership.studio.slug }
-}
-
-export async function verifyEmail(token: string) {
-  try {
-    const verificationToken = await prisma.verificationToken.findUnique({
-      where: { token },
-    })
-
-    if (!verificationToken) {
-      return { error: "Invalid verification token" }
-    }
-
-    if (verificationToken.expires < new Date()) {
-      await prisma.verificationToken.delete({
-        where: { token },
-      })
-      return { error: "Verification token has expired" }
-    }
-
-    await prisma.user.update({
-      where: { email: verificationToken.identifier },
-      data: {
-        isActivated: true,
-        emailVerified: new Date(),
-      },
-    })
-
-    await prisma.verificationToken.delete({
-      where: { token },
-    })
-
-    return { success: true, message: "Email verified successfully! You can now log in." }
-  } catch (err) {
-    console.error("verifyEmail failed:", err)
-    return { error: "Something went wrong. Please try again." }
-  }
 }
 
 export async function requestPasswordReset(formData: FormData) {

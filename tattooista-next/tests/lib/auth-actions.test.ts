@@ -44,7 +44,6 @@ import {
   getMyStudioSlug,
   requestPasswordReset,
   resetPassword,
-  verifyEmail,
   resendVerificationEmail,
 } from "@/lib/actions/auth"
 
@@ -149,16 +148,6 @@ describe("resetPassword", () => {
     prisma.passwordResetToken.findUnique.mockRejectedValue(new Error("P1001"))
 
     const result = await resetPassword("tok", form({ password: "Passw0rd!x", confirmPassword: "Passw0rd!x" }))
-
-    expect(result).toHaveProperty("error")
-  })
-})
-
-describe("verifyEmail", () => {
-  it("returns an error result instead of throwing when the DB is unreachable", async () => {
-    prisma.verificationToken.findUnique.mockRejectedValue(new Error("P1001"))
-
-    const result = await verifyEmail("tok")
 
     expect(result).toHaveProperty("error")
   })

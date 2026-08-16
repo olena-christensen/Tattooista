@@ -1,5 +1,14 @@
 # Rules
 
+## FIRST: Read the handoff
+
+Before answering anything about the state of this project, read **`.claude/HANDOFF.md`** —
+where the last session left off, what was decided, and what is still open. It distinguishes
+decisions from proposals; do not act on anything filed under OPEN without asking.
+
+Keep it current: at the end of a session, update it with what was decided or verified.
+Never write a proposal into it as though it were agreed.
+
 ## MANDATORY: Ask before acting
 
 NEVER run commands, install packages, create/modify files, or take ANY action without asking permission first.

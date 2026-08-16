@@ -7,7 +7,7 @@ const { auth } = NextAuth(authConfig)
 
 // Known top-level routes that are NOT studio slugs
 const PLATFORM_ROUTES = [
-  "login", "register", "verify-email", "reset-password",
+  "login", "verify-email", "reset-password",
   "api", "_next", "not-found", "studio-suspended",
 ]
 
@@ -31,9 +31,7 @@ export default auth(async (req) => {
   // ---- ROUTE CLASSIFICATION ----
   const isAdminRoute = /^\/[^/]+\/admin(\/|$)/.test(nextUrl.pathname)
   const isStudioPublicRoute = slug && !isAdminRoute
-  const isAuthRoute =
-    nextUrl.pathname.startsWith("/login") ||
-    nextUrl.pathname.startsWith("/register")
+  const isAuthRoute = nextUrl.pathname.startsWith("/login")
   const isPlatformPublicRoute =
     nextUrl.pathname === "/" ||
     nextUrl.pathname.startsWith("/api/auth") ||
