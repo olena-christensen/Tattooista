@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useSession } from "next-auth/react"
 
 import { Container } from "@/components/shared/container"
+import { logout } from "@/lib/actions/auth"
 
 const navLinkClass =
   "text-[#c7c7c7] text-[13px] tracking-[1.5px] uppercase hover:text-foreground transition-colors"
@@ -18,6 +19,13 @@ export function PlatformHeader({ onSignIn }: { onSignIn?: () => void }) {
   // always a studio to send them to.
   const { data: session } = useSession()
   const studioSlug = session?.user?.studioSlug
+
+  // Same as the studio header: the action clears the cookie, and the reload is what
+  // makes the header show "Sign In" again.
+  const handleLogout = async () => {
+    await logout()
+    window.location.href = "/"
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 py-5 bg-background/90 backdrop-blur-md border-b border-border">
@@ -36,9 +44,14 @@ export function PlatformHeader({ onSignIn }: { onSignIn?: () => void }) {
             Pricing
           </Link>
           {studioSlug ? (
-            <Link href={`/${studioSlug}/admin`} className={signInClass}>
-              My Studio
-            </Link>
+            <>
+              <Link href={`/${studioSlug}/admin`} className={signInClass}>
+                My Studio
+              </Link>
+              <button type="button" onClick={handleLogout} className={navLinkClass}>
+                Log Out
+              </button>
+            </>
           ) : onSignIn ? (
             <button type="button" onClick={onSignIn} className={signInClass}>
               Sign In
