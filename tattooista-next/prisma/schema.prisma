@@ -103,7 +103,6 @@ model User {
   platformRole  PlatformRole @default(USER)
 
   memberships StudioMembership[]
-  reviews     Review[]
   accounts    Account[]
   sessions    Session[]
 
@@ -168,6 +167,7 @@ model Client {
   studio   Studio              @relation(fields: [studioId], references: [id], onDelete: Cascade)
   contacts Contact[]
   gallery  ClientGalleryItem[]
+  reviews  Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -230,9 +230,12 @@ model Review {
   content    String  @db.Text
   isArchived Boolean @default(false)
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  studio Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  // A review is written by a studio's CUSTOMER, not by a platform user. Customers
+  // (Client) and studio owners (User) are deliberately separate objects that never
+  // mix — sharing an email field does not make them the same thing.
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
 
   gallery ReviewGalleryItem[]
 
@@ -242,6 +245,7 @@ model Review {
   @@index([studioId])
   @@index([studioId, createdAt])
   @@index([studioId, isArchived])
+  @@index([clientId])
 }
 
 model ReviewGalleryItem {

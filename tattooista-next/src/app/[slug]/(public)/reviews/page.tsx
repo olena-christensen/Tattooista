@@ -2,29 +2,32 @@ export const dynamic = "force-dynamic"
 
 import { Metadata } from "next"
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ReviewForm } from "@/components/forms/review-form"
 import { Star } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import { userAvatarUrl, reviewImageUrl } from "@/lib/image-utils"
+import { clientAvatarUrl, reviewImageUrl } from "@/lib/image-utils"
 
 export const metadata: Metadata = {
   title: "Reviews",
   description: "Read what our clients say about their tattoo experience.",
 }
 
-async function getReviewsData() {
+// studioId is not optional here: without it this query returns every studio's
+// reviews on every studio's page. It was missing before, and only went unnoticed
+// because no reviews existed yet.
+async function getReviewsData(studioId: string) {
   const reviews = await prisma.review.findMany({
-    where: { isArchived: false },
+    where: { studioId, isArchived: false },
     include: {
-      user: {
+      client: {
         select: {
           id: true,
-          displayName: true,
+          fullName: true,
           avatar: true,
         },
       },
@@ -53,18 +56,27 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
-export default async function ReviewsPage() {
-  const [reviews, session] = await Promise.all([
-    getReviewsData(),
-    auth(),
-  ])
+export default async function ReviewsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+
+  const studio = await prisma.studio.findUnique({
+    where: { slug },
+    select: { id: true },
+  })
+  if (!studio) {
+    notFound()
+  }
+
+  const reviews = await getReviewsData(studio.id)
 
   const averageRating =
     reviews.length > 0
       ? reviews.reduce((sum, r) => sum + r.rate, 0) / reviews.length
       : 0
-
-  const canSubmitReview = session?.user && session.user.isActivated
 
   return (
     <div className="py-12 md:py-16">
@@ -88,38 +100,17 @@ export default async function ReviewsPage() {
           )}
         </div>
 
-        {/* Submit Review Form */}
-        {canSubmitReview && (
-          <Card className="max-w-2xl mx-auto mb-12">
-            <CardContent className="pt-6">
-              <h2 className="text-xl font-semibold mb-4">Share Your Experience</h2>
-              <ReviewForm />
-            </CardContent>
-          </Card>
-        )}
-
-        {!session?.user && (
-          <Card className="max-w-2xl mx-auto mb-12">
-            <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground mb-4">
-                Want to share your experience? Sign in to leave a review.
-              </p>
-              <Button asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {session?.user && !session.user.isActivated && (
-          <Card className="max-w-2xl mx-auto mb-12">
-            <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground">
-                Please verify your email address to submit reviews.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Submit Review Form — open to the studio's customers, who have no login.
+            The email they give is checked against the studio's client contacts. */}
+        <Card className="max-w-2xl mx-auto mb-12">
+          <CardContent className="pt-6">
+            <h2 className="text-xl font-semibold mb-4">Share Your Experience</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Reviews can be left by the studio&apos;s clients.
+            </p>
+            <ReviewForm studioSlug={slug} />
+          </CardContent>
+        </Card>
 
         {/* Reviews List */}
         {reviews.length > 0 ? (
@@ -130,17 +121,17 @@ export default async function ReviewsPage() {
                   <div className="flex items-start gap-4">
                     <Avatar>
                       <AvatarImage
-                        src={review.user.avatar ? userAvatarUrl(review.user.id, review.user.avatar) : undefined}
-                        alt={review.user.displayName}
+                        src={review.client.avatar ? clientAvatarUrl(review.client.id, review.client.avatar) : undefined}
+                        alt={review.client.fullName}
                       />
                       <AvatarFallback>
-                        {review.user.displayName.charAt(0).toUpperCase()}
+                        {review.client.fullName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold">
-                          {review.user.displayName}
+                          {review.client.fullName}
                         </h3>
                         <span className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(review.createdAt), {

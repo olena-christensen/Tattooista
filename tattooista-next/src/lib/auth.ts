@@ -122,6 +122,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (trigger === "update" && session) {
         token.displayName = session.displayName ?? token.displayName
         token.avatar = session.avatar ?? token.avatar
+        // studioSlug is otherwise written only at sign-in. A user who creates a
+        // studio mid-session would keep `null` here, and getSessionStudio() treats
+        // a null slug as "no studio" — locking them out of their own admin until
+        // they sign out and back in.
+        token.studioSlug = session.studioSlug ?? token.studioSlug
       }
 
       return token

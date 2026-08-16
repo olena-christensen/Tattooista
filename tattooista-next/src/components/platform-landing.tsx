@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { CreateStudioForm } from "@/components/forms/create-studio-form"
+import { CreateStudioSignedInForm } from "@/components/forms/create-studio-signed-in-form"
 import { OwnerLoginForm } from "@/components/forms/owner-login-form"
 import { Container } from "@/components/shared/container"
 import { PlatformHeader } from "@/components/shared/platform-header"
@@ -65,8 +66,16 @@ function useScrollReveal() {
   return ref
 }
 
-export function PlatformLanding() {
-  const [dialogMode, setDialogMode] = useState<"login" | "register" | null>(null)
+export function PlatformLanding({
+  signedInEmail = null,
+  openCreateStudio = false,
+}: {
+  signedInEmail?: string | null
+  openCreateStudio?: boolean
+}) {
+  const [dialogMode, setDialogMode] = useState<"login" | "register" | null>(
+    openCreateStudio ? "register" : null
+  )
   const revealRef = useScrollReveal()
 
   const openLogin = useCallback(() => setDialogMode("login"), [])
@@ -364,19 +373,25 @@ export function PlatformLanding() {
               </p>
             </>
           ) : dialogMode === "register" ? (
-            <>
-              <CreateStudioForm />
-              <p className="text-center text-sm text-muted-foreground mt-4">
-                Already have a studio?{" "}
-                <button
-                  type="button"
-                  onClick={openLogin}
-                  className="text-foreground hover:underline"
-                >
-                  Sign in
-                </button>
-              </p>
-            </>
+            signedInEmail ? (
+              // Already signed in and studio-less: no credentials to collect, and no
+              // "sign in instead" prompt to offer.
+              <CreateStudioSignedInForm email={signedInEmail} />
+            ) : (
+              <>
+                <CreateStudioForm />
+                <p className="text-center text-sm text-muted-foreground mt-4">
+                  Already have a studio?{" "}
+                  <button
+                    type="button"
+                    onClick={openLogin}
+                    className="text-foreground hover:underline"
+                  >
+                    Sign in
+                  </button>
+                </p>
+              </>
+            )
           ) : null}
         </DialogContent>
       </Dialog>

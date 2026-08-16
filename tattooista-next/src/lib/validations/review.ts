@@ -1,6 +1,9 @@
 import { z } from "zod"
 
 export const reviewSchema = z.object({
+  // Customers have no login, so this is how a reviewer identifies themselves: the
+  // address must already be on file as a contact for one of the studio's clients.
+  email: z.string().email("Please enter a valid email address"),
   rate: z
     .number()
     .int()

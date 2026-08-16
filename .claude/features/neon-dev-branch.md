@@ -55,6 +55,41 @@ One variable feeds both consumers, which is why no code needed to change:
 Connection in use: `ep-plain-base-agcqbypf-pooler.c-2.eu-central-1.aws.neon.tech`,
 database `neondb`, `?sslmode=require&channel_binding=require`, PostgreSQL 17.10.
 
+## Gotchas this switch introduced (read before debugging anything odd)
+
+**1. The Docker database still exists and holds DIFFERENT data.**
+
+`tattooista-postgres` was never stopped or deleted — it is still running with its own data,
+which is *not* what the Neon branch contains:
+
+| | Docker (`tattooista-postgres`) | Neon dev branch (prod copy) |
+|---|---|---|
+| Studios | `demo`, **`skinchanger`** | `demo`, `tatts` |
+| Bookings | 0 | 37 |
+
+`skinchanger` is a local-only dev studio. It has **never** existed in production, so it is
+not in the Neon branch and never will be unless it is explicitly copied over. Anyone who
+had been developing against `skinchanger` loses sight of it the moment `DATABASE_URL`
+moves to Neon — the data is not gone, it is just in the other database.
+
+**2. Login sessions survive the switch and then point at nothing.**
+
+The session JWT is signed with `AUTH_SECRET`, which did not change, so an existing browser
+cookie stays valid across the database switch. That cookie has `studioSlug` baked into it
+(written at sign-in, see the `388-createstudio-rejects-studioless-account` takeaway).
+
+So a browser still holding a pre-switch login carries `studioSlug: "skinchanger"`, and
+`(public)/page.tsx:8-10` faithfully redirects `/` → `/skinchanger` — a studio that does not
+exist in the new database. **Symptom:** "localhost:3000 redirects me to some broken page
+instead of the landing page." It looks like a routing or caching bug and is neither.
+
+**Fix:** sign out — `http://localhost:3000/api/auth/signout`, or clear cookies for
+`localhost:3000`. The stale slug leaves with the cookie.
+
+This costs hours if you don't know it, because nothing in the server response is wrong: a
+fresh request to `/` returns 200 with the landing page. The redirect only happens for a
+browser carrying the old cookie.
+
 ## Multi-tenant notes
 N/A at the infrastructure level. Worth knowing for tenant work: the branch carries both
 real studios (`demo`, `tatts`), so cross-studio isolation bugs are now reproducible
