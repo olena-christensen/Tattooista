@@ -22,7 +22,10 @@ import { CheckCircle } from "lucide-react"
 import { generateSlug } from "@/lib/slug"
 import { DPA_PDF_PATH } from "@/lib/constants"
 
-export function CreateStudioForm() {
+// `onSwitchToLogin` renders the "already have a studio" escape hatch *inside* the form,
+// so it disappears together with the form on success. Signing up must never end on a
+// screen that invites the user to type their credentials again.
+export function CreateStudioForm({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [successData, setSuccessData] = useState<{ slug: string } | null>(null)
@@ -68,9 +71,8 @@ export function CreateStudioForm() {
             Your studio URL will be: <strong>{successData.slug}.tattooista.com</strong>
           </p>
           <p className="mt-2">
-            We&apos;ve sent a verification email to your address. Please check your inbox
-            and click the link to activate your account, then you can log in and start
-            setting up your studio.
+            Check your inbox — we&apos;ve sent you a link. Click it and you&apos;ll go
+            straight to your studio. Nothing else to fill in.
           </p>
         </AlertDescription>
       </Alert>
@@ -173,6 +175,18 @@ export function CreateStudioForm() {
             <><LoadingSpinner size="sm" className="mr-2" />Creating studio...</>
           ) : "Create Studio"}
         </Button>
+        {onSwitchToLogin && (
+          <p className="text-center text-sm text-muted-foreground">
+            Already have a studio?{" "}
+            <button
+              type="button"
+              onClick={onSwitchToLogin}
+              className="text-foreground hover:underline"
+            >
+              Sign in
+            </button>
+          </p>
+        )}
       </form>
     </Form>
   )

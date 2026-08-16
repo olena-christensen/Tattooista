@@ -364,19 +364,7 @@ export function PlatformLanding() {
               </p>
             </>
           ) : dialogMode === "register" ? (
-            <>
-              <CreateStudioForm />
-              <p className="text-center text-sm text-muted-foreground mt-4">
-                Already have a studio?{" "}
-                <button
-                  type="button"
-                  onClick={openLogin}
-                  className="text-foreground hover:underline"
-                >
-                  Sign in
-                </button>
-              </p>
-            </>
+            <CreateStudioForm onSwitchToLogin={openLogin} />
           ) : null}
         </DialogContent>
       </Dialog>
