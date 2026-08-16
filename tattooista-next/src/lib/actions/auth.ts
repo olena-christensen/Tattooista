@@ -12,6 +12,16 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email"
 import { revalidatePath } from "next/cache"
 import { AuthError, CredentialsSignin } from "next-auth"
 
+/**
+ * A signup failure whose message was written for the person reading it.
+ *
+ * The transaction below throws for reasons the user can act on ("that URL is taken").
+ * Everything else it can throw — a Prisma error, a dropped connection — is internal and
+ * must never reach the form: a raw `prisma.studio.findUnique()` error surfaced verbatim
+ * on the signup page once, which told the user nothing and leaked schema details.
+ */
+class StudioSignupError extends Error {}
+
 export async function login(formData: FormData) {
   const rawData = {
     email: formData.get("email"),
@@ -39,6 +49,12 @@ export async function login(formData: FormData) {
         case "CredentialsSignin":
           if ((error as CredentialsSignin).code === "email_not_verified") {
             return { error: "Please verify your email before logging in. Check your inbox, or request a new verification email." }
+          }
+          // The password was right; the account simply owns no studio, so there is
+          // nowhere to sign in to. Saying "invalid password" sends people round the
+          // password-reset loop forever, which is exactly what it did.
+          if ((error as CredentialsSignin).code === "no_studio") {
+            return { error: "This email has no studio, so there is nothing to sign in to. Create a studio to get started." }
           }
           return { error: "Invalid email or password" }
         default:
@@ -294,15 +310,20 @@ export async function createStudio(formData: FormData) {
   let verificationToken: string
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Check email not taken
+      // Check email not taken. Accounts and studios are created together here, so an
+      // existing email USUALLY means an existing studio — but not always: rows left by
+      // the retired register() own nothing, and claiming they have a studio sends the
+      // person hunting for one that does not exist.
       const existingUser = await tx.user.findUnique({
         where: { email },
+        select: { _count: { select: { memberships: true } } },
       })
       if (existingUser) {
-        // An account always owns a studio — accounts and studios are created together
-        // here, and authorize() refuses any row that has neither. So an existing email
-        // does mean an existing studio.
-        throw new Error("This email is already associated with a studio on our platform. Please use a different email or sign in to your existing studio.")
+        throw new StudioSignupError(
+          existingUser._count.memberships > 0
+            ? "This email is already associated with a studio on our platform. Please use a different email or sign in to your existing studio."
+            : "This email is already registered but owns no studio, so it cannot be used to create one. Please use a different email, or contact support to have it released."
+        )
       }
 
       // Check slug not taken
@@ -310,7 +331,7 @@ export async function createStudio(formData: FormData) {
         where: { slug },
       })
       if (existingStudio) {
-        throw new Error(`The URL "${slug}" is already taken. Try a different studio name.`)
+        throw new StudioSignupError(`The URL "${slug}" is already taken. Try a different studio name.`)
       }
 
       // Create user
@@ -348,10 +369,11 @@ export async function createStudio(formData: FormData) {
 
     verificationToken = result.token
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof StudioSignupError) {
       return { error: error.message }
     }
-    return { error: "Failed to create studio. Please try again." }
+    console.error("createStudio failed:", error)
+    return { error: "We couldn't create your studio right now. Please try again in a few minutes." }
   }
 
   // Send email outside transaction — failure here doesn't roll back the DB.

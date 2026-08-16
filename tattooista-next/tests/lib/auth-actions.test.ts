@@ -8,11 +8,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 
 // vi.mock is hoisted above the module body, so the mock objects have to be
 // built inside vi.hoisted() to exist by the time the factories run.
-const { prisma, auth, sendPasswordResetEmail, sendVerificationEmail } = vi.hoisted(() => {
+const { prisma, auth, signIn, sendPasswordResetEmail, sendVerificationEmail } = vi.hoisted(() => {
   return {
     auth: vi.fn(),
+    signIn: vi.fn(),
     prisma: {
-      user: { findUnique: vi.fn(), update: vi.fn() },
+      $transaction: vi.fn(),
+      user: { findUnique: vi.fn(), update: vi.fn(), create: vi.fn() },
+      studio: { findUnique: vi.fn() },
       studioMembership: { findFirst: vi.fn() },
       passwordResetToken: {
         findUnique: vi.fn(),
@@ -33,14 +36,20 @@ const { prisma, auth, sendPasswordResetEmail, sendVerificationEmail } = vi.hoist
 })
 
 vi.mock("@/lib/prisma", () => ({ prisma }))
-vi.mock("@/lib/auth", () => ({ signIn: vi.fn(), signOut: vi.fn(), auth }))
+vi.mock("@/lib/auth", () => ({ signIn, signOut: vi.fn(), auth }))
 // actions/auth.ts imports AuthError from next-auth directly; loading the real
 // package pulls in next/server, which does not resolve under the node runner.
 vi.mock("next-auth", () => ({ AuthError: class AuthError extends Error {} }))
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
 vi.mock("@/lib/email", () => ({ sendPasswordResetEmail, sendVerificationEmail }))
+// Real bcrypt hashing is ~300ms a call and proves nothing here.
+vi.mock("bcryptjs", () => ({ default: { hash: vi.fn().mockResolvedValue("hashed") } }))
+vi.mock("@/lib/studio", () => ({ createStudioWithDefaults: vi.fn() }))
 
+import { AuthError } from "next-auth"
 import {
+  login,
+  createStudio,
   getMyStudioSlug,
   requestPasswordReset,
   resetPassword,
@@ -60,6 +69,105 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {})
   sendPasswordResetEmail.mockResolvedValue({ success: true })
   sendVerificationEmail.mockResolvedValue({ success: true })
+})
+
+/** An AuthError as @auth/core delivers it: `type` plus the subclass's `code`. */
+function credentialsError(code: string) {
+  const err = new AuthError("sign-in failed") as AuthError & { type: string; code: string }
+  err.type = "CredentialsSignin"
+  err.code = code
+  return err
+}
+
+// Every one of these messages sent a real person round a loop they could not escape:
+// a studio-less account was told its password was wrong, so resetting the password
+// looked like the fix and never was.
+describe("login — what the user is told", () => {
+  it("says the account has no studio, rather than blaming the password", async () => {
+    signIn.mockRejectedValue(credentialsError("no_studio"))
+
+    const result = await login(form({ email: EMAIL, password: "correct-horse" }))
+
+    expect(result.error).toContain("no studio")
+    expect(result.error).not.toContain("Invalid email or password")
+  })
+
+  it("still says invalid credentials when the password really is wrong", async () => {
+    signIn.mockRejectedValue(credentialsError("invalid_credentials"))
+
+    const result = await login(form({ email: EMAIL, password: "wrong" }))
+
+    expect(result.error).toBe("Invalid email or password")
+  })
+
+  it("points an unverified account at its inbox", async () => {
+    signIn.mockRejectedValue(credentialsError("email_not_verified"))
+
+    const result = await login(form({ email: EMAIL, password: "correct-horse" }))
+
+    expect(result.error).toContain("verify your email")
+  })
+})
+
+describe("createStudio — what the user is told", () => {
+  const signup = () =>
+    form({
+      studioName: "Test Studio",
+      email: EMAIL,
+      password: "correct-horse",
+      confirmPassword: "correct-horse",
+      dpaAccepted: "true",
+    })
+
+  /** Runs the transaction callback against the mocked client, as Prisma would. */
+  function runTransaction() {
+    prisma.$transaction.mockImplementation((fn: (tx: unknown) => unknown) => fn(prisma))
+  }
+
+  it("never leaks a raw database error to the signup form", async () => {
+    // This exact message reached a user on the live site.
+    runTransaction()
+    prisma.user.findUnique.mockRejectedValue(
+      new Error(
+        "Invalid `prisma.studio.findUnique()` invocation: The column `(not available)` does not exist in the current database."
+      )
+    )
+
+    const result = await createStudio(signup())
+
+    expect(result.error).not.toContain("prisma")
+    expect(result.error).not.toContain("column")
+    expect(result.error).toBe("We couldn't create your studio right now. Please try again in a few minutes.")
+  })
+
+  it("does not claim a studio exists when the account owns none", async () => {
+    runTransaction()
+    prisma.user.findUnique.mockResolvedValue({ _count: { memberships: 0 } })
+
+    const result = await createStudio(signup())
+
+    expect(result.error).toContain("owns no studio")
+    expect(result.error).not.toContain("sign in to your existing studio")
+  })
+
+  it("points at the existing studio when the account really owns one", async () => {
+    runTransaction()
+    prisma.user.findUnique.mockResolvedValue({ _count: { memberships: 1 } })
+
+    const result = await createStudio(signup())
+
+    expect(result.error).toContain("already associated with a studio")
+  })
+
+  it("still surfaces a taken URL, which the user can act on", async () => {
+    runTransaction()
+    prisma.user.findUnique.mockResolvedValue(null)
+    prisma.studio.findUnique.mockResolvedValue({ id: "s1", slug: "test-studio" })
+
+    const result = await createStudio(signup())
+
+    expect(result.error).toContain("already taken")
+  })
 })
 
 // owner-login-form.tsx redirects on this after a successful sign-in. A null slug should
