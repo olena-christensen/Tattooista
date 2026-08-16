@@ -4,7 +4,6 @@ Decisions and standing rules: `legal-decisions.md`. Umbrella traps: `~/.claude/s
 
 ## Blocking — before taking a real payment
 
-- [ ] 💻 When saving a subscription status, refuse to replace a final status with an earlier one that arrives late.
 - [ ] 💻 Add a daily check that asks Paddle about payments stuck in pending and feeds the answer through the same handler.
 - [ ] 💻 When a checkout is abandoned, mark that payment closed so the daily check stops asking about it.
 - [ ] 💻 Ask for the studio's value-added-tax number during onboarding and store it in Paddle as the business record's tax_identifier.
@@ -39,6 +38,7 @@ Decisions and standing rules: `legal-decisions.md`. Umbrella traps: `~/.claude/s
 ## Blocking — before announcing
 
 - [ ] 💻 Bring every screen up to what the original app had; track the individual bugs on the GitHub board.
+- [ ] 📋 Close the GitHub board issues that duplicate this list; the board holds single bugs only.
 - [ ] 💻 Check the gallery and wallpaper images are all back; re-upload any missing ones from Server/uploads.
 - [ ] 💻 Add robots.txt, sitemap.xml, and the metadata that makes studio pages preview nicely when shared.
 - [ ] 💻 Check the whole site on a 360-pixel-wide phone screen.
@@ -78,6 +78,7 @@ Decisions and standing rules: `legal-decisions.md`. Umbrella traps: `~/.claude/s
 
 ## Done
 
+- [x] 2026-08-16 💻 When saving a subscription status, refuse to replace a final status with an earlier one that arrives late.
 - [x] 2026-08-09 📋 Decide the plan split: free is one owner seat, 50 client cards, 500 megabytes of images; PRO lifts all three.
 - [x] 2026-08-09 📋 Decide against a free trial; the free tier replaces it.
 - [x] 2026-08-09 💻 Confirm the shipped terms never contained the trial promise; nothing to remove.

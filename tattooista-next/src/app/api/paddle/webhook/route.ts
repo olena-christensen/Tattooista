@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
+import {
+  decideSubscriptionWrite,
+  type PaddleSubscriptionEvent,
+} from "@/lib/paddle-subscription"
 
 // Paddle signs every webhook. We verify the signature against the raw body
 // before trusting anything in it. Docs: developer.paddle.com → Webhooks → Verify.
@@ -28,17 +32,6 @@ function verifyPaddleSignature(rawBody: string, signatureHeader: string | null):
   const a = Buffer.from(expected, "hex")
   const b = Buffer.from(h1, "hex")
   return a.length === b.length && crypto.timingSafeEqual(a, b)
-}
-
-interface PaddleSubscriptionEvent {
-  event_type: string
-  occurred_at: string
-  data: {
-    id: string
-    status: string
-    customer_id: string
-    custom_data?: { studioId?: string } | null
-  }
 }
 
 async function findStudio(event: PaddleSubscriptionEvent) {
@@ -83,55 +76,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
-  const { event_type } = event
-  const { id: subscriptionId, status, customer_id } = event.data
+  const decision = decideSubscriptionWrite(studio, event)
 
-  switch (event_type) {
-    case "subscription.created":
-    case "subscription.activated":
-    case "subscription.updated": {
-      // Grant PRO only on an active or trialing status confirmed by this signed event.
-      // Writing the same values twice is harmless, so duplicate deliveries change nothing.
-      if (status === "active" || status === "trialing") {
-        await prisma.studio.update({
-          where: { id: studio.id },
-          data: {
-            plan: "PRO",
-            paddleCustomerId: customer_id,
-            paddleSubscriptionId: subscriptionId,
-          },
-        })
-      } else if (status === "canceled" && studio.paddleSubscriptionId === subscriptionId) {
-        await prisma.studio.update({
-          where: { id: studio.id },
-          data: { plan: "FREE", paddleSubscriptionId: null },
-        })
-      }
-      // Statuses like past_due keep PRO while Paddle retries payment (dunning).
-      break
-    }
-
-    case "subscription.canceled": {
-      // Downgrade only if this event is about the subscription we actually have —
-      // a stale event about an old, replaced subscription must not touch the plan.
-      if (studio.paddleSubscriptionId === subscriptionId || !studio.paddleSubscriptionId) {
-        await prisma.studio.update({
-          where: { id: studio.id },
-          data: { plan: "FREE", paddleSubscriptionId: null },
-        })
-      }
-      break
-    }
-
-    case "subscription.past_due": {
-      // Keep PRO during dunning; Paddle retries the payment itself.
-      console.warn(`Paddle: subscription ${subscriptionId} past due (studio ${studio.id})`)
-      break
-    }
-
-    default:
-      break
+  if (!decision.apply) {
+    // Acknowledged, deliberately not applied. Paddle must not retry a stale event.
+    console.warn(
+      `Paddle webhook: ignoring ${event.event_type} for studio ${studio.id} — ${decision.reason}`
+    )
+    return NextResponse.json({ received: true })
   }
+
+  if (event.event_type === "subscription.past_due") {
+    console.warn(`Paddle: subscription ${event.data.id} past due (studio ${studio.id})`)
+  }
+
+  await prisma.studio.update({
+    where: { id: studio.id },
+    data: decision.data,
+  })
 
   return NextResponse.json({ received: true })
 }

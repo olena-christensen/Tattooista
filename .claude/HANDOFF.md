@@ -120,13 +120,12 @@ The 389 doc lists "any admin UI for moderating reviews" as explicitly out of sco
   that table was empty. There is no `User`→`Client` mapping, so on any database where the
   table is not empty, those rows cannot be carried over.
 
-## OPEN — nothing agreed, ask before acting
+## PARKED — do not raise
 
-- **#387** (open) — the assistant proposed closing it; **the owner did not agree**. Its
-  three parts have different fates: "nobody can review" was addressed by #389; "build
-  customer signup" contradicts the decided model; the dead-code part is now done (above).
-- **#389** (open) — its work shipped in the commits above, but the issue is still open.
-  What the issue should say is the owner's call.
+**Reviews / the customer-vs-owner model.** #387 and #389 dropped to `priority:low` on
+2026-08-16 at the owner's instruction. Do not mention this area in any answer, summary,
+"what's next" list or handoff highlight **unless the owner brings it up first**. If
+something in it turns up while working elsewhere, note it on the issue and move on.
 
 ## Working agreements
 
