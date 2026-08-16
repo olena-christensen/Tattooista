@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { signIn, signOut, auth } from "@/lib/auth"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
-import { registerSchema, loginSchema, resetPasswordSchema, newPasswordSchema, createStudioSchema } from "@/lib/validations/auth"
+import { registerSchema, loginSchema, resetPasswordSchema, newPasswordSchema, createStudioSchema, createStudioForExistingUserSchema } from "@/lib/validations/auth"
 import { createStudioWithDefaults } from "@/lib/studio"
 import { DPA_VERSION } from "@/lib/constants"
 import { generateSlug, validateSlug } from "@/lib/slug"
@@ -317,6 +317,69 @@ export async function resendVerificationEmail(email: string) {
   }
 }
 
+/**
+ * Create a studio for the **already signed-in** user.
+ *
+ * Identity comes from the session and nothing else — no email or password is read
+ * from the form. That is the whole security argument: attaching a studio to an
+ * address typed into a public form would let anyone claim someone else's account.
+ *
+ * No verification email is sent: `authorize()` refuses unverified accounts, so a
+ * session implies the address is already verified.
+ */
+export async function createStudioForExistingUser(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { error: "You need to be signed in to create a studio." }
+  }
+  const userId = session.user.id
+
+  const validationResult = createStudioForExistingUserSchema.safeParse({
+    studioName: formData.get("studioName"),
+    dpaAccepted: formData.get("dpaAccepted") === "true",
+  })
+  if (!validationResult.success) {
+    return { error: validationResult.error.issues[0].message }
+  }
+
+  const { studioName } = validationResult.data
+
+  const slug = generateSlug(studioName)
+  if (!validateSlug(slug).valid) {
+    return { error: "Studio name produces an invalid URL. Try a longer or different name." }
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const existingMembership = await tx.studioMembership.findFirst({
+        where: { userId, role: "OWNER" },
+      })
+      if (existingMembership) {
+        throw new Error("You already have a studio.")
+      }
+
+      const existingStudio = await tx.studio.findUnique({ where: { slug } })
+      if (existingStudio) {
+        throw new Error(`The URL "${slug}" is already taken. Try a different studio name.`)
+      }
+
+      // DPA acceptance is stamped server-side, same as the signed-out path.
+      await createStudioWithDefaults(
+        userId,
+        { name: studioName, slug, dpaAcceptedAt: new Date(), dpaVersion: DPA_VERSION },
+        tx
+      )
+    })
+  } catch (error) {
+    if (error instanceof Error) {
+      return { error: error.message }
+    }
+    return { error: "Failed to create studio. Please try again." }
+  }
+
+  return { success: true, slug }
+}
+
 export async function createStudio(formData: FormData) {
   const rawData = {
     studioName: formData.get("studioName"),
@@ -353,7 +416,10 @@ export async function createStudio(formData: FormData) {
         where: { email },
       })
       if (existingUser) {
-        throw new Error("This email is already associated with a studio on our platform. Please use a different email or sign in to your existing studio.")
+        // Deliberately does NOT claim they already own a studio — plenty of accounts
+        // own nothing. Signing in is the real route: createStudioForExistingUser()
+        // then attaches a studio to the account they prove they own.
+        throw new Error("This email already has an account. Please sign in, then create your studio.")
       }
 
       // Check slug not taken

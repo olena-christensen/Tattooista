@@ -69,7 +69,20 @@ export const createStudioSchema = z
     path: ["confirmPassword"],
   })
 
+// Signed-in variant: identity comes from the session, so no email/password is
+// collected or trusted. Only the studio name and a fresh DPA acceptance.
+export const createStudioForExistingUserSchema = z.object({
+  studioName: z
+    .string()
+    .min(2, "Studio name must be at least 2 characters")
+    .max(100, "Studio name is too long"),
+  dpaAccepted: z.boolean().refine((v) => v === true, {
+    message: "You must accept the Data Processing Agreement",
+  }),
+})
+
 export type CreateStudioInput = z.infer<typeof createStudioSchema>
+export type CreateStudioForExistingUserInput = z.infer<typeof createStudioForExistingUserSchema>
 
 export type LoginInput = z.infer<typeof loginSchema>
 export type RegisterInput = z.infer<typeof registerSchema>

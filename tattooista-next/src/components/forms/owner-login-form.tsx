@@ -46,9 +46,11 @@ export function OwnerLoginForm() {
       // that would explain it). Say what happened instead.
       const slug = await getMyStudioSlug()
       if (!slug) {
-        setServerError(
-          "You're signed in, but this account doesn't have a studio yet. Use \"Create one\" below to set one up."
-        )
+        // Signed in with no studio. Reload onto the create-studio form: this page was
+        // server-rendered before the session existed, so it still thinks we're logged
+        // out and would otherwise offer the signed-out form, which rejects an email
+        // that already has an account.
+        window.location.href = "/?create=studio"
         return
       }
       window.location.href = `/${slug}/admin`

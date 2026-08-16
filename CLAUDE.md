@@ -13,11 +13,21 @@ Make the file changes, report what changed, and STOP. Do not commit, even if the
 If a workflow (a skill, a slash command, etc.) would normally end in a commit/push, do everything up to that point and hand it back to the user.
 No exceptions.
 
-## FORBIDDEN: External accounts
+## External accounts: allowed vs forbidden
 
-NEVER touch, modify, create, or delete anything on external accounts (Vercel, GitHub, npm, databases, any third-party service).
-No creating databases, no adding integrations, no installing marketplace products, no modifying account settings.
-If the user needs something done on an external account, explain what they need to do and where to find it. Let them do it themselves.
+**Allowed — do these yourself, no need to ask:**
+- File, edit, comment on, label, and close GitHub **issues**, and move cards on the project board. Issue tracking is not code. Do not hand the user text to paste when you can file it yourself.
+- Read-only inspection anywhere: `gh issue list`, `gh run view`, `vercel env ls`, listing Neon branches, querying a database with SELECTs.
+
+**Forbidden — the user does these, always:**
+- Anything that provisions, bills, or reconfigures: creating databases or Neon branches, adding integrations, installing marketplace products, changing account or project settings, editing environment variables.
+- Anything that writes to a production database.
+
+When something is forbidden, explain exactly what the user must do and where to find it — and say plainly that *this rule* is why, never that you are unable to.
+
+## FORBIDDEN: Never commit or push code
+
+This is the strict one. See "FORBIDDEN: Git commits and pushes" above — it is not softened by anything in this section.
 
 ## Migration: Always reproduce from original first
 
@@ -177,6 +187,22 @@ production data:
   without the user's explicit say-so.
 - To refresh it, create a new branch in the Neon console (copy-on-write, instant) and
   update `DATABASE_URL`. Branch creation is the user's job — never touch external accounts.
+
+### Two traps from the Docker → Neon switch
+
+**`localhost:3000` redirects to a studio that doesn't exist (e.g. `/skinchanger`).**
+Not a routing or cache bug. The session JWT is signed with `AUTH_SECRET`, which did not
+change, so a pre-switch browser cookie is still valid — and it has the old `studioSlug`
+baked in. `(public)/page.tsx:8-10` redirects `/` to that slug, which is absent from the new
+database. A fresh request to `/` returns 200 with the landing page, which is why nothing
+looks wrong server-side. **Fix: sign out** (`/api/auth/signout` or clear cookies for
+`localhost:3000`).
+
+**The old Docker database still exists, with different data.** `tattooista-postgres` was
+never stopped. It holds `demo` + `skinchanger` and 0 bookings; the Neon branch holds
+`demo` + `tatts` and 37 bookings. `skinchanger` is local-only and has never existed in
+production, so it is not on the Neon branch. Nothing was lost — it is in the other
+database. Before assuming data "disappeared", check which database `DATABASE_URL` points at.
 
 ## Seeding
 

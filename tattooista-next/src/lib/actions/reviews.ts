@@ -6,21 +6,22 @@ import { requireSessionStudio, requireStudioRole } from "@/lib/tenant"
 import { revalidatePath } from "next/cache"
 import { reviewSchema, updateReviewSchema } from "@/lib/validations/review"
 
+// Reviews belong to a studio's CUSTOMER (Client), never to a platform User.
+// Customers and studio owners are separate objects that never mix.
+const reviewAuthor = {
+  select: {
+    id: true,
+    fullName: true,
+    avatar: true,
+  },
+} as const
+
 export async function getReviews(includeArchived = false) {
   const studio = await requireSessionStudio()
 
   const reviews = await prisma.review.findMany({
     where: { studioId: studio.id, ...(includeArchived ? {} : { isArchived: false }) },
-    include: {
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          avatar: true,
-        },
-      },
-      gallery: true,
-    },
+    include: { client: reviewAuthor, gallery: true },
     orderBy: { createdAt: "desc" },
   })
 
@@ -32,16 +33,7 @@ export async function getReviewById(id: string) {
 
   const review = await prisma.review.findUnique({
     where: { id },
-    include: {
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          avatar: true,
-        },
-      },
-      gallery: true,
-    },
+    include: { client: reviewAuthor, gallery: true },
   })
 
   if (!review || review.studioId !== studio.id) {
@@ -51,42 +43,40 @@ export async function getReviewById(id: string) {
   return review
 }
 
-export async function getUserReviews(userId: string) {
+export async function getClientReviews(clientId: string) {
   const studio = await requireSessionStudio()
 
   const reviews = await prisma.review.findMany({
     where: {
       studioId: studio.id,
-      userId,
+      clientId,
       isArchived: false,
     },
-    include: {
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          avatar: true,
-        },
-      },
-      gallery: true,
-    },
+    include: { client: reviewAuthor, gallery: true },
     orderBy: { createdAt: "desc" },
   })
 
   return reviews
 }
 
-export async function createReview(formData: FormData) {
-  const session = await auth()
-  if (!session?.user) {
-    return { error: "You must be logged in to submit a review" }
+/**
+ * Submit a review for a studio.
+ *
+ * Public — no session, because customers have no login. The reviewer identifies
+ * themselves by an email that the studio must already hold on file for one of its
+ * clients. If the studio has never recorded them as a customer, the review is
+ * refused. That is what makes fabricated reviews impossible.
+ *
+ * The studio comes from the slug in the URL, not from a session.
+ */
+export async function createReview(studioSlug: string, formData: FormData) {
+  const studio = await prisma.studio.findUnique({
+    where: { slug: studioSlug },
+    select: { id: true },
+  })
+  if (!studio) {
+    return { error: "Studio not found" }
   }
-
-  if (!session.user.isActivated) {
-    return { error: "Please verify your email before submitting a review" }
-  }
-
-  const studio = await requireSessionStudio()
 
   const galleryJson = formData.get("gallery")
   let gallery: string[] = []
@@ -100,6 +90,7 @@ export async function createReview(formData: FormData) {
   }
 
   const rawData = {
+    email: formData.get("email"),
     rate: parseInt(formData.get("rate") as string, 10),
     content: formData.get("content"),
     gallery,
@@ -112,53 +103,76 @@ export async function createReview(formData: FormData) {
 
   const data = validationResult.data
 
-  const review = await prisma.review.create({
-    data: {
-      studioId: studio.id,
-      rate: data.rate,
-      content: data.content,
-      userId: session.user.id,
-      gallery: data.gallery && data.gallery.length > 0 ? {
-        create: data.gallery.map((fileName) => ({
-          studioId: studio.id,
-          fileName,
-        })),
-      } : undefined,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          avatar: true,
-        },
+  try {
+    // Scoped to this studio: being a customer of one studio grants nothing at another.
+    const contact = await prisma.contact.findFirst({
+      where: {
+        studioId: studio.id,
+        type: "email",
+        value: { equals: data.email, mode: "insensitive" },
       },
-      gallery: true,
-    },
-  })
+      select: { clientId: true },
+    })
 
-  revalidatePath("/reviews")
-  return { success: true, data: review }
+    if (!contact) {
+      return {
+        error:
+          "We couldn't find that email in this studio's client list. Reviews can only be left by the studio's customers.",
+      }
+    }
+
+    await prisma.review.create({
+      data: {
+        studioId: studio.id,
+        clientId: contact.clientId,
+        rate: data.rate,
+        content: data.content,
+        gallery:
+          data.gallery && data.gallery.length > 0
+            ? {
+                create: data.gallery.map((fileName) => ({
+                  studioId: studio.id,
+                  fileName,
+                })),
+              }
+            : undefined,
+      },
+    })
+  } catch (err) {
+    console.error("createReview failed:", err)
+    return { error: "Something went wrong. Please try again." }
+  }
+
+  revalidatePath(`/${studioSlug}/reviews`)
+  return { success: true, message: "Thank you! Your review has been posted." }
+}
+
+// ---------------------------------------------------------------------------
+// Studio-side management. Reviewers are customers with no login, so they cannot
+// edit their own reviews — every mutation below is the studio acting on its own
+// reviews, and each one is scoped by studioId so a review id from another studio
+// cannot be touched.
+// ---------------------------------------------------------------------------
+
+async function requireOwnedReview(id: string) {
+  const session = await auth()
+  if (!session?.user) {
+    return { error: "Unauthorized" as const }
+  }
+  const studio = await requireSessionStudio()
+  await requireStudioRole(session.user.id, studio.id)
+
+  const review = await prisma.review.findUnique({ where: { id } })
+  if (!review || review.studioId !== studio.id) {
+    return { error: "Review not found" as const }
+  }
+
+  return { studio, review }
 }
 
 export async function updateReview(id: string, formData: FormData) {
-  const session = await auth()
-  if (!session?.user) {
-    return { error: "Unauthorized" }
-  }
-
-  const review = await prisma.review.findUnique({
-    where: { id },
-  })
-
-  if (!review) {
-    return { error: "Review not found" }
-  }
-
-  // Only the author can update their review
-  if (review.userId !== session.user.id) {
-    return { error: "You can only edit your own reviews" }
-  }
+  const ctx = await requireOwnedReview(id)
+  if ("error" in ctx) return ctx
 
   const rawData = {
     rate: formData.has("rate") ? parseInt(formData.get("rate") as string, 10) : undefined,
@@ -178,16 +192,7 @@ export async function updateReview(id: string, formData: FormData) {
       ...(data.rate !== undefined && { rate: data.rate }),
       ...(data.content && { content: data.content }),
     },
-    include: {
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          avatar: true,
-        },
-      },
-      gallery: true,
-    },
+    include: { client: reviewAuthor, gallery: true },
   })
 
   revalidatePath("/reviews")
@@ -195,28 +200,12 @@ export async function updateReview(id: string, formData: FormData) {
 }
 
 export async function addReviewGalleryItem(reviewId: string, fileName: string) {
-  const session = await auth()
-  if (!session?.user) {
-    return { error: "Unauthorized" }
-  }
-
-  const studio = await requireSessionStudio()
-
-  const review = await prisma.review.findUnique({
-    where: { id: reviewId },
-  })
-
-  if (!review) {
-    return { error: "Review not found" }
-  }
-
-  if (review.userId !== session.user.id) {
-    return { error: "You can only edit your own reviews" }
-  }
+  const ctx = await requireOwnedReview(reviewId)
+  if ("error" in ctx) return ctx
 
   await prisma.reviewGalleryItem.create({
     data: {
-      studioId: studio.id,
+      studioId: ctx.studio.id,
       fileName,
       reviewId,
     },
@@ -231,35 +220,27 @@ export async function removeReviewGalleryItem(id: string) {
   if (!session?.user) {
     return { error: "Unauthorized" }
   }
+  const studio = await requireSessionStudio()
+  await requireStudioRole(session.user.id, studio.id)
 
   const item = await prisma.reviewGalleryItem.findUnique({
     where: { id },
-    include: {
-      review: true,
-    },
+    include: { review: true },
   })
 
-  if (!item) {
+  if (!item || item.review.studioId !== studio.id) {
     return { error: "Gallery item not found" }
   }
 
-  if (item.review.userId !== session.user.id) {
-    return { error: "You can only edit your own reviews" }
-  }
-
-  await prisma.reviewGalleryItem.delete({
-    where: { id },
-  })
+  await prisma.reviewGalleryItem.delete({ where: { id } })
 
   revalidatePath("/reviews")
   return { success: true }
 }
 
 export async function archiveReview(id: string) {
-  const session = await auth()
-  if (!session?.user) return { error: "Unauthorized" }
-  const studio = await requireSessionStudio()
-  await requireStudioRole(session.user.id, studio.id)
+  const ctx = await requireOwnedReview(id)
+  if ("error" in ctx) return ctx
 
   await prisma.review.update({
     where: { id },
@@ -272,10 +253,8 @@ export async function archiveReview(id: string) {
 }
 
 export async function restoreReview(id: string) {
-  const session = await auth()
-  if (!session?.user) return { error: "Unauthorized" }
-  const studio = await requireSessionStudio()
-  await requireStudioRole(session.user.id, studio.id)
+  const ctx = await requireOwnedReview(id)
+  if ("error" in ctx) return ctx
 
   await prisma.review.update({
     where: { id },
@@ -288,14 +267,10 @@ export async function restoreReview(id: string) {
 }
 
 export async function deleteReview(id: string) {
-  const session = await auth()
-  if (!session?.user) return { error: "Unauthorized" }
-  const studio = await requireSessionStudio()
-  await requireStudioRole(session.user.id, studio.id)
+  const ctx = await requireOwnedReview(id)
+  if ("error" in ctx) return ctx
 
-  await prisma.review.delete({
-    where: { id },
-  })
+  await prisma.review.delete({ where: { id } })
 
   revalidatePath("/reviews")
   revalidatePath("/[slug]/admin/reviews", "page")
