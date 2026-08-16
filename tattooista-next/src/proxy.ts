@@ -36,6 +36,11 @@ export default auth(async (req) => {
     nextUrl.pathname === "/" ||
     nextUrl.pathname.startsWith("/api/auth") ||
     nextUrl.pathname.startsWith("/api/contact") ||
+    // Paddle signs its webhooks and has no session. Without this the POST is
+    // redirected to /login with a 307, the handler never runs, and a completed
+    // payment silently never upgrades the studio. The signature check in the
+    // route is what authenticates it.
+    nextUrl.pathname.startsWith("/api/paddle") ||
     nextUrl.pathname.startsWith("/verify-email") ||
     nextUrl.pathname.startsWith("/reset-password")
 
