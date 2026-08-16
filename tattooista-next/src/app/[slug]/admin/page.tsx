@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   Star,
   ArrowRight,
+  ExternalLink,
 } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -60,17 +61,29 @@ export default async function AdminDashboardPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const studio = await prisma.studio.findUnique({ where: { slug }, select: { id: true } })
+  const studio = await prisma.studio.findUnique({
+    where: { slug },
+    select: { id: true, name: true },
+  })
   if (!studio) notFound()
   const stats = await getDashboardStats(studio.id)
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome to your admin dashboard.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome to your admin dashboard.
+          </p>
+        </div>
+        <Link
+          href={`/${slug}`}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Go to {studio.name}
+          <ExternalLink className="h-4 w-4" />
+        </Link>
       </div>
 
       {/* Stats Grid */}
