@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import {
   Dialog,
   DialogContent,
@@ -73,6 +75,30 @@ export function PlatformLanding() {
   const openRegister = useCallback(() => setDialogMode("register"), [])
   const closeDialog = useCallback(() => setDialogMode(null), [])
 
+  // Every session belongs to a studio owner, so none of the CTAs below should be
+  // offering them a signup form for a studio they already have.
+  const { data: session } = useSession()
+  const router = useRouter()
+  const studioSlug = session?.user?.studioSlug
+
+  // "Get Started", "Join Pilot", "Create Your Studio" — signing up is already done.
+  const startCta = useCallback(() => {
+    if (studioSlug) {
+      router.push(`/${studioSlug}/admin`)
+      return
+    }
+    openRegister()
+  }, [studioSlug, router, openRegister])
+
+  // "Go Pro" — the upgrade itself lives in the studio's billing settings.
+  const upgradeCta = useCallback(() => {
+    if (studioSlug) {
+      router.push(`/${studioSlug}/admin/settings`)
+      return
+    }
+    openRegister()
+  }, [studioSlug, router, openRegister])
+
   return (
     <div ref={revealRef}>
       <PlatformHeader onSignIn={openLogin} />
@@ -101,7 +127,7 @@ export function PlatformLanding() {
           <div className="flex flex-wrap gap-4 items-center mb-4 animate-[fadeUp_0.8s_ease-out_0.45s_both]">
             <button
               type="button"
-              onClick={openRegister}
+              onClick={startCta}
               className="inline-flex items-center justify-center px-12 h-[60px] bg-foreground text-background text-sm font-semibold tracking-[2px] uppercase border-2 border-foreground transition-all duration-300 hover:bg-transparent hover:text-foreground"
             >
               Get Early Access
@@ -206,7 +232,7 @@ export function PlatformLanding() {
               </ul>
               <button
                 type="button"
-                onClick={openRegister}
+                onClick={startCta}
                 className="self-start inline-flex items-center justify-center px-12 h-[60px] bg-foreground text-background text-sm font-semibold tracking-[2px] uppercase border-2 border-foreground transition-all duration-300 hover:bg-transparent hover:text-foreground"
               >
                 Create Your Studio
@@ -250,7 +276,7 @@ export function PlatformLanding() {
               </ul>
               <button
                 type="button"
-                onClick={openRegister}
+                onClick={startCta}
                 className="w-full inline-flex items-center justify-center h-[60px] border-2 border-foreground/25 text-[#c7c7c7] text-sm font-semibold tracking-[2px] uppercase transition-all duration-300 hover:border-foreground hover:text-foreground"
               >
                 Get Started
@@ -275,7 +301,7 @@ export function PlatformLanding() {
               </ul>
               <button
                 type="button"
-                onClick={openRegister}
+                onClick={upgradeCta}
                 className="w-full inline-flex items-center justify-center h-[60px] border-2 border-foreground/25 text-[#c7c7c7] text-sm font-semibold tracking-[2px] uppercase transition-all duration-300 hover:border-foreground hover:text-foreground"
               >
                 Go Pro
@@ -303,7 +329,7 @@ export function PlatformLanding() {
               </ul>
               <button
                 type="button"
-                onClick={openRegister}
+                onClick={upgradeCta}
                 className="w-full inline-flex items-center justify-center h-[60px] bg-foreground text-background text-sm font-semibold tracking-[2px] uppercase border-2 border-foreground transition-all duration-300 hover:bg-transparent hover:text-foreground"
               >
                 Go Pro Yearly
@@ -327,7 +353,7 @@ export function PlatformLanding() {
           </p>
           <button
             type="button"
-            onClick={openRegister}
+            onClick={startCta}
             className="landing-reveal inline-flex items-center justify-center px-12 h-[60px] bg-foreground text-background text-sm font-semibold tracking-[2px] uppercase border-2 border-foreground transition-all duration-300 hover:bg-transparent hover:text-foreground"
           >
             Join Pilot
