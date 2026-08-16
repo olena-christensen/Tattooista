@@ -1,6 +1,4 @@
 export * from "./booking-form"
-export * from "./login-form"
-export * from "./register-form"
 export * from "./client-form"
 export * from "./review-form"
 export * from "./style-form"
