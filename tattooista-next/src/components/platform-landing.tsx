@@ -90,14 +90,19 @@ export function PlatformLanding() {
     openRegister()
   }, [studioSlug, router, openRegister])
 
-  // "Go Pro" — the upgrade itself lives in the studio's billing settings.
-  const upgradeCta = useCallback(() => {
-    if (studioSlug) {
-      router.push(`/${studioSlug}/admin/settings`)
-      return
-    }
-    openRegister()
-  }, [studioSlug, router, openRegister])
+  // "Go Pro" is a decision already made, so it opens the payment overlay on arrival —
+  // BillingCard reads ?checkout and calls Paddle straight away. Signed out, there is
+  // nothing to bill yet, so it still starts with signup.
+  const upgradeCta = useCallback(
+    (billingPeriod: "monthly" | "yearly") => {
+      if (studioSlug) {
+        router.push(`/${studioSlug}/admin/settings?checkout=${billingPeriod}`)
+        return
+      }
+      openRegister()
+    },
+    [studioSlug, router, openRegister]
+  )
 
   return (
     <div ref={revealRef}>
@@ -301,7 +306,7 @@ export function PlatformLanding() {
               </ul>
               <button
                 type="button"
-                onClick={upgradeCta}
+                onClick={() => upgradeCta("monthly")}
                 className="w-full inline-flex items-center justify-center h-[60px] border-2 border-foreground/25 text-[#c7c7c7] text-sm font-semibold tracking-[2px] uppercase transition-all duration-300 hover:border-foreground hover:text-foreground"
               >
                 Go Pro
@@ -329,7 +334,7 @@ export function PlatformLanding() {
               </ul>
               <button
                 type="button"
-                onClick={upgradeCta}
+                onClick={() => upgradeCta("yearly")}
                 className="w-full inline-flex items-center justify-center h-[60px] bg-foreground text-background text-sm font-semibold tracking-[2px] uppercase border-2 border-foreground transition-all duration-300 hover:bg-transparent hover:text-foreground"
               >
                 Go Pro Yearly

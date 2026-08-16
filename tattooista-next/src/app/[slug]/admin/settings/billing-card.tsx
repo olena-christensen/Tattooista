@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -93,6 +93,31 @@ export function BillingCard({ plan, studioId, slug, hasSubscription }: BillingCa
       setBusy(false)
     }
   }
+
+  // "Go Pro" on the landing page is a buying decision already made — it links here with
+  // ?checkout=monthly|yearly and the payment overlay opens straight away, rather than
+  // asking the person to find and press the same button a second time.
+  const autoCheckoutStarted = useRef(false)
+  useEffect(() => {
+    if (autoCheckoutStarted.current || plan !== "FREE") return
+
+    const wanted = new URLSearchParams(window.location.search).get("checkout")
+    const priceId =
+      wanted === "monthly"
+        ? process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_MONTHLY
+        : wanted === "yearly"
+          ? process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_YEARLY
+          : undefined
+    if (!priceId) return
+
+    autoCheckoutStarted.current = true
+    // Drop the parameter so a refresh or a back-navigation does not reopen the overlay.
+    window.history.replaceState({}, "", window.location.pathname)
+    openCheckout(priceId)
+    // Runs once on arrival; openCheckout is stable enough for that and re-running it
+    // would mean reopening a payment overlay the person may have just dismissed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan])
 
   async function handleCancel() {
     setBusy(true)
